@@ -1,0 +1,6 @@
+<resources>
+    <item name="scan_stop" type="id" />
+    <item name="scan_start" type="id" />
+    <item name="support_ihere" type="id" />
+    <item name="disable_ihere" type="id" />
+</resources>
