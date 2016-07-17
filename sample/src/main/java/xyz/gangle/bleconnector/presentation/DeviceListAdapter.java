@@ -8,10 +8,11 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.tggg.nble.NBle;
+
 import java.util.List;
 
 import xyz.gangle.bleconnector.R;
-import com.tggg.nble.NBleDeviceManager;
 
 /**
  * Created by yiyidu on 5/29/16.
@@ -85,7 +86,7 @@ public class DeviceListAdapter extends BaseAdapter {
         }
 
 
-        boolean isMaintain = NBleDeviceManager.getInstance().isMaintain(info.address);
+        boolean isMaintain = NBle.getManager().isMaintain(info.address);
         holder.viewMaintain.setVisibility(isMaintain ? View.VISIBLE : View.GONE);
 
         return convertView;

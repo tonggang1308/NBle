@@ -26,12 +26,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tggg.nble.BluetoothUtil;
+import com.tggg.nble.DeviceStateEvent;
 import com.tggg.nble.NBle;
 import com.tggg.nble.NBleDevice;
-import com.tggg.nble.NBleDeviceManager;
 import com.tggg.nble.NBleScanner;
-import com.tggg.nble.device.DeviceBase;
-import com.tggg.nble.DeviceStateEvent;
 import com.tggg.util.CommonUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -115,12 +113,12 @@ public class ScanActivity extends AppCompatActivity
                 int position = ((AdapterView.AdapterContextMenuInfo) menuInfo).position;
                 DeviceInfo info = devList.get(position);
 
-                if (!NBleDeviceManager.getInstance().isMaintain(info.address))
+                if (!NBle.getManager().isMaintain(info.address))
                     menu.add(0, MENU_ITEM_ADD_MAINTAIN, 0, "add to Maintain list");
                 else
                     menu.add(0, MENU_ITEM_REMOVE_MAINTAIN, 0, "remove from Maintain list");
 
-                NBleDevice device = (NBleDevice) NBleDeviceManager.getInstance().getDevice(info.address);
+                NBleDevice device = NBle.getManager().getDevice(info.address);
                 if (device == null) {
                     menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
                 } else if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {
@@ -219,12 +217,12 @@ public class ScanActivity extends AppCompatActivity
     private NBleScanner.BleScanListener scanListener = new NBleScanner.BleScanListener() {
         @Override
         public void onScanStarted() {
-            Timber.v("ble scann start!");
+            Timber.v("ble scan start!");
         }
 
         @Override
         public void onScanStopped() {
-            Timber.v("ble scann stoped");
+            Timber.v("ble scan stopped");
         }
 
         @Override
@@ -357,13 +355,13 @@ public class ScanActivity extends AppCompatActivity
         int position = menuInfo.position;
         String address = devList.get(position).address;
         String name = devList.get(position).name;
-        NBleDevice device = (NBleDevice) NBleDeviceManager.getInstance().getDevice(devList.get(position).address);
+        NBleDevice device = NBle.getManager().getDevice(devList.get(position).address);
         switch (item.getItemId()) {
             case MENU_ITEM_ADD_MAINTAIN:
                 if (device != null) {
                     device.setMaintain(true);
                 } else {
-                    NBleDeviceManager.getInstance().add(new NBleDevice.Builder(address, name).isMaintain(true).build(getApplicationContext()));
+                    device = new NBle.DeviceBuilder(address, name).isMaintain(true).build();
                 }
                 break;
             case MENU_ITEM_REMOVE_MAINTAIN:
@@ -373,7 +371,7 @@ public class ScanActivity extends AppCompatActivity
                 break;
             case MENU_ITEM_CONNECT:
                 if (device == null) {
-                    device = new NBleDevice.Builder(address, name).build(getApplicationContext());
+                    device = new NBle.DeviceBuilder(address, name).build();
                 }
 
                 if (device != null)
@@ -415,10 +413,10 @@ public class ScanActivity extends AppCompatActivity
     }
 
     protected void addMaintainDevsInfo() {
-        for (DeviceBase device : NBleDeviceManager.getInstance().getAll()) {
+        for (NBleDevice device : NBle.getManager().getAll()) {
             DeviceInfo info = getDeviceInfo(device.getAddress());
             if (info == null) {
-                int state = ((NBleDevice) device).getConnectionState();
+                int state = device.getConnectionState();
                 if (state == BluetoothProfile.STATE_CONNECTED) {
                     state = DeviceInfo.CONNECTED;
                 } else if (state == BluetoothProfile.STATE_DISCONNECTED) {

@@ -23,8 +23,6 @@ import timber.log.Timber;
 @TargetApi(21)
 class NBleScannerImpl implements NBleScanner {
 
-    public static final int SCAN_SHRESHOLD = -55;
-
     public static final int SCAN_NAME_MATCH_WHOLE = 0x00;
     public static final int SCAN_NAME_MATCH_HEAD = 0x01;
     public static final int SCAN_NAME_MATCH_TAIL = 0x02;
