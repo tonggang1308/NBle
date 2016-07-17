@@ -44,7 +44,7 @@ public class NBleService extends Service {
         Timber.i("onCreate, first start NBleService");
 
         // 第一次启动，恢复‘维护设备列表’。
-        NBleDeviceManager.getInstance().restoreDevices(this);
+        NBleDeviceManagerImpl.getInstance().restoreDevices(this);
         if (BluetoothUtil.isAdapterEnable(this)) {
             // 重新连接‘需要维护的设备’
             reconnectAll();
@@ -77,8 +77,8 @@ public class NBleService extends Service {
 
     private void closeAll() {
         Timber.i("service closeAll()");
-        for (String address : NBleDeviceManager.getInstance().getAllAddresses()) {
-            NBleDevice device = (NBleDevice) NBleDeviceManager.getInstance().getDevice(address);
+        for (String address : NBleDeviceManagerImpl.getInstance().getAllAddresses()) {
+            NBleDeviceImpl device = (NBleDeviceImpl) NBleDeviceManagerImpl.getInstance().getDevice(address);
             device.disconnect();
         }
     }
@@ -86,8 +86,8 @@ public class NBleService extends Service {
     private void reconnectAll() {
         Timber.i("service reconnectAll()");
         if (BluetoothUtil.isAdapterEnable(this)) {
-            for (String address : NBleDeviceManager.getInstance().getAllAddresses()) {
-                NBleDevice device = (NBleDevice) NBleDeviceManager.getInstance().getDevice(address);
+            for (String address : NBleDeviceManagerImpl.getInstance().getAllAddresses()) {
+                NBleDeviceImpl device = (NBleDeviceImpl) NBleDeviceManagerImpl.getInstance().getDevice(address);
 
                 if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && device.isMaintain()) {
                     device.connect();

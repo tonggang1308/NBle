@@ -3,12 +3,11 @@ package xyz.gangle.bleconnector.app;
 import android.app.Application;
 import android.content.Context;
 
+import com.tggg.nble.NBle;
+
 import timber.log.Timber;
 import xyz.gangle.bleconnector.BuildConfig;
 import xyz.gangle.bleconnector.data.BaseBleNotifyFunction;
-
-import com.tggg.nble.NBle;
-import com.tggg.nble.NBleDeviceManager;
 
 /**
  * Created by yiyidu on 5/28/16.
@@ -33,7 +32,7 @@ public class ConnectorApplication extends Application {
         NBle.init(this);
 
         // 注册响应
-        NBleDeviceManager.getInstance().registerDefaultNotification(new BaseBleNotifyFunction());
+        NBle.getManager().registerDefaultNotification(new BaseBleNotifyFunction());
 
 
 

@@ -2,15 +2,21 @@ package com.tggg.nble;
 
 import android.content.Context;
 
-import com.tggg.nble.NBlePreference;
+import com.tggg.nble.ifunction.IBleNotifyFunction;
 
 import java.util.UUID;
+
+import timber.log.Timber;
 
 /**
  * Created by Gang Tong
  */
 public final class NBle {
     private NBle() {
+    }
+
+    static public NBleDeviceManager getManager() {
+        return NBleDeviceManagerImpl.getInstance();
     }
 
     static public void init(Context context) {
@@ -51,6 +57,41 @@ public final class NBle {
 
         public NBleScanner build() {
             return nBleScanner;
+        }
+    }
+
+    /**
+     * BLE Device Builder
+     */
+    public static class DeviceBuilder {
+        private NBleDeviceImpl nBleDevice;
+
+        private DeviceBuilder() {
+        }
+
+        public DeviceBuilder(String address, String name) {
+            this.nBleDevice = new NBleDeviceImpl(address, name);
+        }
+
+        public DeviceBuilder isMaintain(boolean isMaintain) {
+            this.nBleDevice.setMaintain(isMaintain);
+            return this;
+        }
+
+        public DeviceBuilder setINotifyFunction(IBleNotifyFunction iBleNotifyFunction) {
+            this.nBleDevice.setiNotifyFunction(iBleNotifyFunction);
+            return this;
+        }
+
+        public NBleDevice build() {
+            if (this.nBleDevice.getNotifyFunction() == null) {
+                // 根据设备名获取notify function
+                IBleNotifyFunction iBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
+                setINotifyFunction(iBleNotifyFunction);
+                Timber.d("Builder set iBleNotifyFunction: %s", iBleNotifyFunction == null ? "null" : iBleNotifyFunction.getClass().getName());
+            }
+            NBleDeviceManagerImpl.getInstance().add(this.nBleDevice);
+            return this.nBleDevice;
         }
     }
 }
