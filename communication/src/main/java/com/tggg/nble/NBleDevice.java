@@ -50,9 +50,6 @@ public interface NBleDevice {
      */
     boolean read(UUID serviceUuid, UUID characteristicUuid);
 
-
-    IBleNotifyFunction getNotifyFunction();
-
     /**
      * 请求Rssi值。
      */

@@ -7,7 +7,7 @@ import android.content.Intent;
 
 import timber.log.Timber;
 
-public class BluetoothAdapterStateReceiver extends BroadcastReceiver {
+public final class BluetoothAdapterStateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -22,8 +22,7 @@ public class BluetoothAdapterStateReceiver extends BroadcastReceiver {
                 NBleService.startAdapterTurnOff(context);
             } else if (BluetoothAdapter.STATE_OFF == state) {
             }
-        }
-        else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)
+        } else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)
                 || intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
             NBleService.start(context);
         }

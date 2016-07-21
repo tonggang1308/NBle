@@ -15,21 +15,16 @@ public interface NBleDeviceManager {
     NBleDevice getDevice(String address);
 
     /**
-     * 获取所有维护设备的address列表
-     */
-    List<String> getAllAddresses();
-
-    /**
      * 获取所有设备
      */
-    List<NBleDevice> getAll();
+    List<NBleDevice> getAllDevices();
 
     /**
      * 获取所有设备
      *
      * @param maintain 是否是维护状态的
      */
-    List<NBleDevice> getAll(boolean maintain);
+    List<NBleDevice> getAllDevices(boolean maintain);
 
     /**
      * 获取所有已连接的设备
@@ -54,12 +49,12 @@ public interface NBleDeviceManager {
     /**
      * 根据设备名注册notification的处理接口
      */
-    void registerNotification(String deviceName, IBleNotifyFunction ifunction);
+    void registerNotification(String deviceName, IBleNotifyFunction iFunction);
 
     /**
      * 注册notification的默认处理接口
      */
-    void registerDefaultNotification(IBleNotifyFunction ifunction);
+    void registerDefaultNotification(IBleNotifyFunction iFunction);
 
     /**
      * 删除设备

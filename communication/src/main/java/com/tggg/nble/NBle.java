@@ -73,7 +73,7 @@ public final class NBle {
             this.nBleDevice = new NBleDeviceImpl(address, name);
         }
 
-        public DeviceBuilder isMaintain(boolean isMaintain) {
+        public DeviceBuilder setMaintain(boolean isMaintain) {
             this.nBleDevice.setMaintain(isMaintain);
             return this;
         }

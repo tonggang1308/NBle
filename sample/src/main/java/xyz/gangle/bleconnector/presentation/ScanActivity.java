@@ -361,7 +361,7 @@ public class ScanActivity extends AppCompatActivity
                 if (device != null) {
                     device.setMaintain(true);
                 } else {
-                    device = new NBle.DeviceBuilder(address, name).isMaintain(true).build();
+                    device = new NBle.DeviceBuilder(address, name).setMaintain(true).build();
                 }
                 break;
             case MENU_ITEM_REMOVE_MAINTAIN:
@@ -413,7 +413,7 @@ public class ScanActivity extends AppCompatActivity
     }
 
     protected void addMaintainDevsInfo() {
-        for (NBleDevice device : NBle.getManager().getAll()) {
+        for (NBleDevice device : NBle.getManager().getAllDevices()) {
             DeviceInfo info = getDeviceInfo(device.getAddress());
             if (info == null) {
                 int state = device.getConnectionState();

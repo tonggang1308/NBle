@@ -12,7 +12,7 @@ import timber.log.Timber;
 /**
  * Created by Gang Tong.
  */
-public class BluetoothUtil {
+public final class BluetoothUtil {
 
     public static String adapterStateToString(int state) {
         switch (state) {
