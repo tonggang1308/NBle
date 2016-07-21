@@ -11,12 +11,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
 /**
  * Created by Gang Tong
+ * <p/>
+ * 连接描述：ble设备的连接策略基本上是用户发起的连接，是'直接'连接。当直接连接不上返回exception后，并且是维护状态时，再次连接就采用'自动'连接。
  */
-class NBleDeviceManagerImpl implements NBleDeviceManager {
+class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener {
 
     /**
      * 记录的devices
@@ -40,6 +47,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
         // prevent instantiation
     }
 
+    private Context context;
+
     /**
      * 单例
      */
@@ -49,6 +58,10 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
 
     public static NBleDeviceManagerImpl getInstance() {
         return LazyHolder.INSTANCE;
+    }
+
+    public void init(Context context) {
+        this.context = context;
     }
 
     /**
@@ -150,6 +163,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
      */
     public synchronized void add(NBleDevice deviceSettingItem) {
         mDevices.put(deviceSettingItem.getAddress(), (NBleDeviceImpl) deviceSettingItem);
+
         storeDevices();
     }
 
@@ -163,6 +177,23 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
         if (remove != null && remove.isMaintain()) {
             storeDevices();
         }
+    }
+
+    /**
+     * 直接连接设备
+     */
+    public boolean connectDirectly(NBleDevice bleDevice) {
+        return ((NBleDeviceImpl) bleDevice).connect(false);
+    }
+
+    /**
+     * 断开设备
+     */
+    public void disconnect(NBleDevice bleDevice) {
+        ((NBleDeviceImpl) bleDevice).disconnectImpl();
+        // 在连接过程中做disconnect，会导致连接中断，且没有回调。
+        // 所以每次重连需要先做close，以及后续的判断处理。
+        reconnect(bleDevice);
     }
 
 
@@ -199,5 +230,55 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
                 }
             }
         }
+    }
+
+    /**
+     * 在连接过程中做disconnect，会导致连接中断，且没有回调。
+     * 所以每次重连需要先做close，以及后续的判断处理。
+     */
+    protected void reconnect(final NBleDevice device) {
+        Observable.just(device)
+                .subscribeOn(Schedulers.newThread())
+                .map(new Func1<NBleDevice, NBleDevice>() {
+                    @Override
+                    public NBleDevice call(NBleDevice device) {
+                        ((NBleDeviceImpl) device).close();
+                        return device;
+                    }
+                })
+                .filter(new Func1<NBleDevice, Boolean>() {
+                    @Override
+                    public Boolean call(NBleDevice device) {
+                        return BluetoothUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
+                    }
+                })
+                .subscribeOn(Schedulers.immediate())
+                .map(new Func1<NBleDevice, Boolean>() {
+                    @Override
+                    public Boolean call(NBleDevice device) {
+                        return connectDirectly(device);
+                    }
+                })
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Boolean s) {
+
+                    }
+                });
+    }
+
+    @Override
+    public void onConnectException(NBleDevice device, int status) {
+        reconnect(device);
     }
 }
