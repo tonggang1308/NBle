@@ -37,7 +37,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     public static UUID SERVICES_DEVICE_INFO_UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb");
     public static UUID CHARACTERISTICS_SOFTWARE_UUID = UUID.fromString("00002a28-0000-1000-8000-00805f9b34fb");
 
-    private BluetoothGattCharacteristic sofetwareversion = null;
     /**
      * 序列化字段
      */

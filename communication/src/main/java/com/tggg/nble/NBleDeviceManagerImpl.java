@@ -69,7 +69,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
     /**
      * 获取所有设备
      */
-    public List<NBleDevice> getAll() {
+    public List<NBleDevice> getAllDevices() {
         ArrayList<NBleDevice> allDeviceSettingItems = new ArrayList<>(mDevices.values());
         return Collections.unmodifiableList(allDeviceSettingItems);
     }
@@ -79,7 +79,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
      *
      * @param maintain 是否是维护状态的
      */
-    public List<NBleDevice> getAll(boolean maintain) {
+    public List<NBleDevice> getAllDevices(boolean maintain) {
         List<NBleDevice> items = new ArrayList<>();
         List<NBleDevice> allDeviceSettingItems = new ArrayList<>(mDevices.values());
         for (NBleDevice device : allDeviceSettingItems) {
@@ -131,17 +131,17 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
     /**
      * 根据设备名注册notification的处理接口
      */
-    public synchronized void registerNotification(String deviceName, IBleNotifyFunction ifunction) {
+    public synchronized void registerNotification(String deviceName, IBleNotifyFunction iFunction) {
         if (!mNotfitySubscrip.containsKey(deviceName)) {
-            mNotfitySubscrip.put(deviceName, ifunction);
+            mNotfitySubscrip.put(deviceName, iFunction);
         }
     }
 
     /**
      * 注册notification的默认处理接口
      */
-    public void registerDefaultNotification(IBleNotifyFunction ifunction) {
-        mDefaultSubscrip = ifunction;
+    public void registerDefaultNotification(IBleNotifyFunction iFunction) {
+        mDefaultSubscrip = iFunction;
     }
 
 
