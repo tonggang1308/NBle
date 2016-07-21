@@ -25,6 +25,9 @@ public final class NBle {
 
         // BLE Service
         NBleService.start(context);
+
+        // BLE Manager
+        NBleDeviceManagerImpl.getInstance().init(context);
     }
 
     public static class ScannerBuilder {
