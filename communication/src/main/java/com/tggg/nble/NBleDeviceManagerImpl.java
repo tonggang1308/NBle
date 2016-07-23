@@ -10,10 +10,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscriber;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
@@ -60,6 +60,16 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         return LazyHolder.INSTANCE;
     }
 
+    /**
+     * 获取Context
+     */
+    public Context getContext() {
+        return this.context;
+    }
+
+    /**
+     * 初始化
+     */
     public void init(Context context) {
         this.context = context;
     }
@@ -126,12 +136,22 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         return device != null && device.isMaintain();
     }
 
+    /**
+     * 根据device设置设备的维护状态
+     */
+    public synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
+        device.setMaintain(bMaintain);
+        NBleDeviceManagerImpl.getInstance().storeDevices();
+    }
+
+    /**
+     * 根据address设置设备的维护状态
+     */
     public synchronized void setMaintain(String address, boolean bMaintain) {
         NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
         device.setMaintain(bMaintain);
         NBleDeviceManagerImpl.getInstance().storeDevices();
     }
-
 
     /**
      * 根据设备名获取notification的接口
@@ -225,7 +245,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
                     Timber.v("Restore Device:%s", device.getAddress());
                     if (device != null) {
-                        setMaintain(device.getAddress(), true);
+                        setMaintain(device, true);
                     }
                 }
             }
@@ -252,6 +272,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                         return BluetoothUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
                     }
                 })
+                .delay(2, TimeUnit.SECONDS)
                 .subscribeOn(Schedulers.immediate())
                 .map(new Func1<NBleDevice, Boolean>() {
                     @Override
@@ -267,7 +288,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
 
                     @Override
                     public void onError(Throwable e) {
-
+                        reconnect(device);
                     }
 
                     @Override

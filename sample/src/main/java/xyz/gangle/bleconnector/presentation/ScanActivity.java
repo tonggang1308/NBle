@@ -34,6 +34,7 @@ import com.tggg.util.CommonUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -137,18 +138,17 @@ public class ScanActivity extends AppCompatActivity
             }
         });
 
-        EventBus.getDefault().register(this);
-
 
         scanner = new NBle.ScannerBuilder(this).setScanNames(new String[]{"iHere", "Zus", "Aio"}).build();
 
         addMaintainDevsInfo();
     }
 
-    @Subscribe
-    public void onEventMainThread(DeviceStateEvent event) {
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDeviceStateEvent(DeviceStateEvent event) {
         if (event instanceof DeviceStateEvent) {
-            Timber.d("get a event, type:%d", event.type);
+            Timber.d("get a event, %s", event.toString());
             DeviceInfo deviceInfo = getDeviceInfo(event.address);
             if (deviceInfo != null) {
                 if (event.type == DeviceStateEvent.CONNECTED) {
@@ -227,7 +227,7 @@ public class ScanActivity extends AppCompatActivity
 
         @Override
         public void onDeviceDiscovered(String address, String name, int rssi, byte[] scanRecord) {
-            Timber.i("rssi:%d, device name:%s, device addr:%s", rssi, name, address);
+            Timber.v("rssi:%d, device name:%s, device addr:%s", rssi, name, address);
             DeviceInfo info = getDeviceInfo(address);
             if (info == null) {
                 final DeviceInfo newDevice = new DeviceInfo(address, name, rssi, DeviceInfo.DISCONNECTED);
@@ -432,6 +432,18 @@ public class ScanActivity extends AppCompatActivity
                 addDeviceInfo(info);
             }
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
 }

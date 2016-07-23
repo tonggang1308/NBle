@@ -41,6 +41,10 @@ public class DeviceStateEvent {
         this.uuid = uuid;
     }
 
+    public String toString() {
+        return String.format("Device:%s, Type:%s", address, typeString());
+    }
+
     public String typeString() {
         switch (type) {
             case NOTIFY:

@@ -71,17 +71,20 @@ class NBleScannerImpl implements NBleScanner {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
-                    if (mScanListener == null || callbackType != ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
-                        Timber.e("Callback not set!");
-                        return;
-                    }
 
                     String name = result.getDevice().getName();
                     String address = result.getDevice().getAddress();
                     int rssi = result.getRssi();
 
+                    Timber.v("onScanResult, name:%s, address:%s", name, address);
+                    if (mScanListener == null || callbackType != ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
+                        Timber.e("Callback not set!");
+                        return;
+                    }
+
+
                     if (!addressList.contains(result.getDevice().getAddress())) {
-                        Timber.v("ADDRESS:%s, RSSI:%d, NAME:%s", result.getDevice().getAddress(), result.getRssi(), result.getDevice().getName());
+                        Timber.d("ADDRESS:%s, RSSI:%d, NAME:%s", result.getDevice().getAddress(), result.getRssi(), result.getDevice().getName());
                         addressList.add(result.getDevice().getAddress());
                     }
 
@@ -96,12 +99,15 @@ class NBleScannerImpl implements NBleScanner {
                 public void onBatchScanResults(List<ScanResult> results) {
                     super.onBatchScanResults(results);
 
+                    Timber.d("onBatchScanResults, size:%d", results.size());
+
                 }
 
                 @Override
                 public void onScanFailed(int errorCode) {
                     super.onScanFailed(errorCode);
                     stop();
+                    Timber.d("onScanFailed, errorCode:%d", errorCode);
                 }
             };
         }
