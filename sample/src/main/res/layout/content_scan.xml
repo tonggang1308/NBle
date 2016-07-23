@@ -9,9 +9,13 @@
     tools:context="xyz.gangle.bleconnector.presentation.ScanActivity"
     tools:showIn="@layout/app_bar_scan">
 
-    <ListView
+
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/listView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    
+        android:layout_height="match_parent"
+        app:layoutManager="LinearLayoutManager"
+        tools:listitem="@layout/list_item_device_info" />
+
+
 </android.support.constraint.ConstraintLayout>
