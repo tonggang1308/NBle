@@ -11,9 +11,9 @@ import java.util.List;
 class NBlePreference {
 
     private static final String PREFERENCE_SHARE = "preference.tggg.share";
-    static private final String SERIALIZATION_LIST = "tggg.communication.storage.Preference.SERIALIZATION_LIST";
-    static private Context mContext;
-    static public SharedPreferences mPreferences;
+    private static final String SERIALIZATION_LIST = "tggg.communication.storage.Preference.SERIALIZATION_LIST";
+    private static Context mContext;
+    public static SharedPreferences mPreferences;
 
     private NBlePreference() {
     }

@@ -10,13 +10,20 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import rx.Observable;
+import rx.Observer;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
 /**
  * Created by Gang Tong
+ * <p/>
+ * 连接描述：ble设备的连接策略基本上是用户发起的连接，是'直接'连接。当直接连接不上返回exception后，并且是维护状态时，再次连接就采用'自动'连接。
  */
-class NBleDeviceManagerImpl implements NBleDeviceManager {
+class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener {
 
     /**
      * 记录的devices
@@ -40,6 +47,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
         // prevent instantiation
     }
 
+    private Context context;
+
     /**
      * 单例
      */
@@ -49,6 +58,20 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
 
     public static NBleDeviceManagerImpl getInstance() {
         return LazyHolder.INSTANCE;
+    }
+
+    /**
+     * 获取Context
+     */
+    public Context getContext() {
+        return this.context;
+    }
+
+    /**
+     * 初始化
+     */
+    public void init(Context context) {
+        this.context = context;
     }
 
     /**
@@ -113,12 +136,22 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
         return device != null && device.isMaintain();
     }
 
+    /**
+     * 根据device设置设备的维护状态
+     */
+    public synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
+        device.setMaintain(bMaintain);
+        NBleDeviceManagerImpl.getInstance().storeDevices();
+    }
+
+    /**
+     * 根据address设置设备的维护状态
+     */
     public synchronized void setMaintain(String address, boolean bMaintain) {
         NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
         device.setMaintain(bMaintain);
         NBleDeviceManagerImpl.getInstance().storeDevices();
     }
-
 
     /**
      * 根据设备名获取notification的接口
@@ -150,6 +183,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
      */
     public synchronized void add(NBleDevice deviceSettingItem) {
         mDevices.put(deviceSettingItem.getAddress(), (NBleDeviceImpl) deviceSettingItem);
+
         storeDevices();
     }
 
@@ -163,6 +197,23 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
         if (remove != null && remove.isMaintain()) {
             storeDevices();
         }
+    }
+
+    /**
+     * 直接连接设备
+     */
+    public boolean connectDirectly(NBleDevice bleDevice) {
+        return ((NBleDeviceImpl) bleDevice).connect(false);
+    }
+
+    /**
+     * 断开设备
+     */
+    public void disconnect(NBleDevice bleDevice) {
+        ((NBleDeviceImpl) bleDevice).disconnectImpl();
+        // 在连接过程中做disconnect，会导致连接中断，且没有回调。
+        // 所以每次重连需要先做close，以及后续的判断处理。
+        reconnect(bleDevice);
     }
 
 
@@ -194,10 +245,61 @@ class NBleDeviceManagerImpl implements NBleDeviceManager {
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
                     Timber.v("Restore Device:%s", device.getAddress());
                     if (device != null) {
-                        setMaintain(device.getAddress(), true);
+                        setMaintain(device, true);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * 在连接过程中做disconnect，会导致连接中断，且没有回调。
+     * 所以每次重连需要先做close，以及后续的判断处理。
+     */
+    protected void reconnect(final NBleDevice device) {
+        Observable.just(device)
+                .subscribeOn(Schedulers.newThread())
+                .map(new Func1<NBleDevice, NBleDevice>() {
+                    @Override
+                    public NBleDevice call(NBleDevice device) {
+                        ((NBleDeviceImpl) device).close();
+                        return device;
+                    }
+                })
+                .filter(new Func1<NBleDevice, Boolean>() {
+                    @Override
+                    public Boolean call(NBleDevice device) {
+                        return BluetoothUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
+                    }
+                })
+                .delay(2, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.immediate())
+                .map(new Func1<NBleDevice, Boolean>() {
+                    @Override
+                    public Boolean call(NBleDevice device) {
+                        return connectDirectly(device);
+                    }
+                })
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        reconnect(device);
+                    }
+
+                    @Override
+                    public void onNext(Boolean s) {
+
+                    }
+                });
+    }
+
+    @Override
+    public void onConnectException(NBleDevice device, int status) {
+        reconnect(device);
     }
 }

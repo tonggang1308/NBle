@@ -25,6 +25,9 @@ public final class NBle {
 
         // BLE Service
         NBleService.start(context);
+
+        // BLE Manager
+        NBleDeviceManagerImpl.getInstance().init(context);
     }
 
     public static class ScannerBuilder {
@@ -70,7 +73,7 @@ public final class NBle {
         }
 
         public DeviceBuilder(String address, String name) {
-            this.nBleDevice = new NBleDeviceImpl(address, name);
+            this.nBleDevice = new NBleDeviceImpl(NBleDeviceManagerImpl.getInstance().getContext(), address, name);
         }
 
         public DeviceBuilder setMaintain(boolean isMaintain) {

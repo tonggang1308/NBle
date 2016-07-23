@@ -1,8 +1,7 @@
 package xyz.gangle.bleconnector.presentation;
 
-/**
- * Created by yiyidu on 5/30/16.
- */
+
+import android.graphics.Color;
 
 public class DeviceInfo {
 
@@ -21,5 +20,23 @@ public class DeviceInfo {
     String address;
     String name;
     Integer rssi;
-    int status; // 0:disconnted; 1:connected; 2:connecting;
+    int status;
+
+    public String getRssiString() {
+        return rssi == null ? "---" : String.format("%ddb", rssi);
+    }
+
+    public String getStatusString() {
+        if (status == DeviceInfo.DISCONNECTED) {
+            return "Disconnected";
+        } else if (status == DeviceInfo.CONNECTING) {
+            return "Connecting";
+        } else if (status == DeviceInfo.CONNECTED) {
+            return "Connected";
+        } else if (status == DeviceInfo.CLOSE) {
+            return "Close";
+        }
+
+        return "Unknow";
+    }
 }

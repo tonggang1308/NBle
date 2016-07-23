@@ -13,21 +13,15 @@ import android.content.Context;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
-import timber.log.Timber;
-
 import com.tggg.nble.Record.StatusChangeRecord;
 import com.tggg.nble.device.DeviceBase;
 import com.tggg.nble.ifunction.IBleNotifyFunction;
+
+import java.util.List;
+import java.util.UUID;
+
+import rx.functions.Action1;
+import timber.log.Timber;
 
 /**
  * Created by Gang Tong.
@@ -72,8 +66,9 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         // prevent instantiation
     }
 
-    public NBleDeviceImpl(String address, String name) {
+    public NBleDeviceImpl(Context context, String address, String name) {
         super(address, name);
+        this.context = context;
     }
 
     @Override
@@ -103,6 +98,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     public void setMaintain(boolean maintain) {
         this.bMaintain = maintain;
     }
+
 
     /**
      * 获取device
@@ -234,25 +230,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public synchronized void disconnect() {
+        NBleDeviceManagerImpl.getInstance().disconnect(this);
+    }
+
+    /**
+     * 断开连接。
+     */
+    public synchronized void disconnectImpl() {
         if (bleGatt != null) {
             Timber.i("disconnect() isConnecting:%s, address: %s", Boolean.toString(isConnecting), getAddress());
             recordStatus(StatusChangeRecord.DISCONNECT);
             if (isConnecting) {
                 isConnecting = false;
                 bleGatt.disconnect();
-                // 在连接过程中做disconnect，会导致连接中断，且没有回调。
-                // 所以需要做close，以及后续的判断处理。
-                observable.subscribeOn(Schedulers.immediate())
-                        .filter(new Func1<String, Boolean>() {
-                            @Override
-                            public Boolean call(String s) {
-                                return bluetoothAdapter.isEnabled() && NBleDeviceManagerImpl.getInstance().isMaintain(getAddress());
-                            }
-                        })
-                        .delay(1, TimeUnit.SECONDS)
-                        .observeOn(Schedulers.newThread())
-                        .subscribe(connectAction);
-
             } else {
                 // 如果当前在连接状态，则会触发断开的回调函数。在回调中处理是否close，以及是否需要重连。
                 isConnecting = false;
@@ -269,7 +259,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     @Override
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
-        return connect(false);
+        return NBleDeviceManagerImpl.getInstance().connectDirectly(this);
     }
 
     /**
@@ -278,7 +268,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      * @param autoConnect， 表示是否是直连，还是auto连接。
      * @return
      */
-    private synchronized boolean connect(boolean autoConnect) {
+    public synchronized boolean connect(boolean autoConnect) {
 
         if (bluetoothAdapter == null) {
             bluetoothAdapter = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
@@ -335,16 +325,23 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = JSON.parseObject(json);
         String address = object.getString(SERIALIZE_ADDRESS);
         String name = object.getString(SERIALIZE_NAME);
-        return new NBleDeviceImpl(address, name);
+        return new NBleDeviceImpl(context, address, name);
     }
 
-    Observable observable = Observable.create(new Observable.OnSubscribe<String>() {
-        @Override
-        public void call(Subscriber<? super String> subscriber) {
-            closeAction.call(getAddress());
-            subscriber.onNext(getAddress());
+    /**
+     * close
+     */
+    public void close() {
+        isConnecting = false;
+        if (bleGatt != null) {
+            bleGatt.close();
+            bleGatt = null;
+            recordStatus(StatusChangeRecord.CLOSE);
+            if (iBleNotifyFunction != null) {
+                iBleNotifyFunction.onClose(context, getAddress());
+            }
         }
-    });
+    }
 
     Action1<String> closeAction = new Action1<String>() {
         @Override
@@ -352,15 +349,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             synchronized (NBleDeviceImpl.this) {
                 Timber.i("Start Close Action to close device " + address);
                 // close device
-                isConnecting = false;
-                if (bleGatt != null) {
-                    bleGatt.close();
-                    bleGatt = null;
-                    recordStatus(StatusChangeRecord.CLOSE);
-                    if (iBleNotifyFunction != null) {
-                        iBleNotifyFunction.onClose(context, address);
-                    }
-                }
+                close();
             }
         }
     };
@@ -445,16 +434,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 }
             } catch (ConnectException e) {
 
-                observable.subscribeOn(Schedulers.newThread())
-                        .filter(new Func1<String, Boolean>() {
-                            @Override
-                            public Boolean call(String s) {
-                                return bluetoothAdapter.isEnabled() && NBleDeviceManagerImpl.getInstance().isMaintain(address);
-                            }
-                        })
-                        .delay(1, TimeUnit.SECONDS)
-                        .observeOn(Schedulers.newThread())
-                        .subscribe(connectAction);
+                NBleDeviceManagerImpl.getInstance().onConnectException(NBleDeviceImpl.this, status);
             }
         }
 
