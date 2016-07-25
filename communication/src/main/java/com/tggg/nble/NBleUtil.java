@@ -15,7 +15,7 @@ import timber.log.Timber;
 /**
  * Created by Gang Tong.
  */
-public final class BluetoothUtil {
+public final class NBleUtil {
 
     public static String adapterStateToString(int state) {
         switch (state) {

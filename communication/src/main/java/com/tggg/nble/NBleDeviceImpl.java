@@ -211,16 +211,16 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         BluetoothDevice device = bleGatt.getDevice();
         int state = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getConnectionState(device, BluetoothProfile.GATT);
-        Timber.d("getConnectedState() addr:%s, state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+        Timber.d("getConnectedState() addr:%s, state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
 
         if (isConnecting) {
             state = BluetoothProfile.STATE_CONNECTING;
-            Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+            Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
             return state;
         }
 
         state = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getConnectionState(device, BluetoothProfile.GATT);
-        Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+        Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
 
         return state;
     }
@@ -367,7 +367,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             final String address = gatt.getDevice().getAddress();
             String deviceName = gatt.getDevice().getName();
 
-            Timber.i(getName() + ", " + address + ", " + iBleNotifyFunction.getClass().getName() + ", Connection operation status: " + BluetoothUtil.statusToString(status) + ", New connection state: " + BluetoothUtil.connectionStateToString(newState));
+            Timber.i(getName() + ", " + address + ", " + iBleNotifyFunction.getClass().getName() + ", Connection operation status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState));
 
             try {
                 isConnecting = false;

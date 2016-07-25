@@ -23,7 +23,7 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.tggg.nble.BluetoothUtil;
+import com.tggg.nble.NBleUtil;
 import com.tggg.nble.DeviceStateEvent;
 import com.tggg.nble.NBle;
 import com.tggg.nble.NBleDevice;
@@ -153,7 +153,7 @@ public class ScanActivity extends AppCompatActivity
 
     @NeedsPermission({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
     public void onScanStart() {
-        if (BluetoothUtil.isAdapterEnable(this)) {
+        if (NBleUtil.isAdapterEnable(this)) {
             scanner.start(scanListener);
         } else {
             Toast.makeText(this, "Please enable bluetooth adapter!", Toast.LENGTH_SHORT).show();

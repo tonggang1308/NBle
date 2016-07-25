@@ -269,7 +269,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                 .filter(new Func1<NBleDevice, Boolean>() {
                     @Override
                     public Boolean call(NBleDevice device) {
-                        return BluetoothUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
+                        return NBleUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
                     }
                 })
                 .delay(2, TimeUnit.SECONDS)

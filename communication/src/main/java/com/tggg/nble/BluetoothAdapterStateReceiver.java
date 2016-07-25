@@ -15,7 +15,7 @@ public final class BluetoothAdapterStateReceiver extends BroadcastReceiver {
 
         if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
             int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-            Timber.d(intent.getAction() + ", State: " + BluetoothUtil.adapterStateToString(state));
+            Timber.d(intent.getAction() + ", State: " + NBleUtil.adapterStateToString(state));
             if (BluetoothAdapter.STATE_ON == state) {
                 NBleService.startAdapterTurnOn(context);
             } else if (BluetoothAdapter.STATE_TURNING_OFF == state) {
