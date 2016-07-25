@@ -66,8 +66,9 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         // prevent instantiation
     }
 
-    public NBleDeviceImpl(String address, String name) {
+    public NBleDeviceImpl(Context context, String address, String name) {
         super(address, name);
+        this.context = context;
     }
 
     @Override
@@ -324,7 +325,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = JSON.parseObject(json);
         String address = object.getString(SERIALIZE_ADDRESS);
         String name = object.getString(SERIALIZE_NAME);
-        return new NBleDeviceImpl(address, name);
+        return new NBleDeviceImpl(context, address, name);
     }
 
     /**
