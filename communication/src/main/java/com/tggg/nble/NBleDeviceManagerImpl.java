@@ -132,7 +132,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据device设置设备的维护状态
      */
-    public synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
+    protected synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
         device.setMaintain(bMaintain);
         NBleDeviceManagerImpl.getInstance().storeDevices();
     }
@@ -170,16 +170,18 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         mDefaultSubscription = iFunction;
     }
 
-
     /**
      * 添加设备
      */
-    public synchronized void add(NBleDevice deviceSettingItem) {
+    public synchronized void add(NBleDevice deviceSettingItem, boolean store) {
         mDevices.put(deviceSettingItem.getAddress(), (NBleDeviceImpl) deviceSettingItem);
-
-        storeDevices();
+        if (store)
+            storeDevices();
     }
 
+    public synchronized void add(NBleDevice deviceSettingItem) {
+        add(deviceSettingItem, true);
+    }
 
     /**
      * 删除设备
@@ -230,8 +232,9 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         List<String> serializationList = new ArrayList<String>();
         synchronized (mDevices) {
             for (NBleDevice device : mDevices.values()) {
-                if (((NBleDeviceImpl) device).isMaintain()) {
-                    Timber.v("Store Device:%s", device.getAddress());
+                if (device.isMaintain()) {
+                    Timber.v("Store Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
+                    // 连接中，或者maintain的设备都要store下来
                     serializationList.add(((NBleDeviceImpl) device).serialize());
                 }
             }
@@ -248,10 +251,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
             synchronized (mDevices) {
                 for (String serialization : serializationList) {
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
-                    Timber.v("Restore Device:%s", device.getAddress());
-                    if (device != null) {
-                        setMaintain(device, true);
-                    }
+                    add(device);
+                    Timber.v("Restore Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
                 }
             }
         }

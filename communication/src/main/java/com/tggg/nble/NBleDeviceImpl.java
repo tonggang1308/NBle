@@ -36,6 +36,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public static final String SERIALIZE_ADDRESS = "address";
     public static final String SERIALIZE_NAME = "name";
+    public static final String SERIALIZE_MAINTAIN = "maintain";
 
     /**
      * Enable Notification的UUID
@@ -321,6 +322,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = new JSONObject();
         object.put(SERIALIZE_ADDRESS, getAddress());
         object.put(SERIALIZE_NAME, getName());
+        object.put(SERIALIZE_MAINTAIN, isMaintain());
         return object.toJSONString();
     }
 
@@ -328,7 +330,11 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = JSON.parseObject(json);
         String address = object.getString(SERIALIZE_ADDRESS);
         String name = object.getString(SERIALIZE_NAME);
-        return new NBleDeviceImpl(context, address, name);
+        Boolean maintain = object.getBoolean(SERIALIZE_MAINTAIN);
+        NBleDeviceImpl device = new NBleDeviceImpl(context, address, name);
+        if (maintain != null)
+            device.setMaintain(maintain);
+        return device;
     }
 
     /**
