@@ -120,27 +120,32 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-
+        boolean retValue = true;
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
-            return false;
+            retValue = false;
+        } else {
+            BluetoothGattService service = bleGatt.getService(serviceUuid);
+            if (service == null) {
+                Timber.e("service null: %s", serviceUuid.toString());
+                retValue = false;
+            } else {
+
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+                if (characteristic == null) {
+                    Timber.e("characteristic null: %s", characteristicUuid.toString());
+                    retValue = false;
+                } else {
+                    characteristic.setValue(data);
+                    retValue = bleGatt.writeCharacteristic(characteristic);
+                    Timber.i("writeCharacteristic result: %b", retValue);
+                }
+            }
+        }
+        if (!retValue) {
+            getManager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
         }
 
-        BluetoothGattService service = bleGatt.getService(serviceUuid);
-        if (service == null) {
-            Timber.e("service null: %s", serviceUuid.toString());
-            return false;
-        }
-
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-        if (characteristic == null) {
-            Timber.e("characteristic null: %s", characteristicUuid.toString());
-            return false;
-        }
-
-        characteristic.setValue(data);
-        boolean retValue = bleGatt.writeCharacteristic(characteristic);
-        Timber.i("writeCharacteristic result: %b", retValue);
         return retValue;
     }
 
@@ -153,35 +158,52 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
-        boolean retValue;
+        boolean retValue = true;
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
-            return false;
-        }
-        BluetoothGattService service = null;
-        try {
-            service = bleGatt.getService(serviceUuid);
-        } catch (Exception e) {
-            Timber.e(e.getMessage());
-        }
-        if (service == null) {
+            retValue = false;
+        } else {
+            BluetoothGattService service = null;
+            try {
+                service = bleGatt.getService(serviceUuid);
+            } catch (Exception e) {
+                Timber.e(e.getMessage());
+            }
+            if (service == null) {
 //            Timber.e("service null: %s", serviceUuid.toString());
 //            Timber.e("service count: %d", bleGatt.getServices().size());
 //            for (BluetoothGattService ser : bleGatt.getServices()) {
 //                Timber.e("service uuid: %s", ser.getUuid().toString());
 //            }
-            return false;
+                retValue = false;
+            } else {
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+                if (characteristic == null) {
+                    Timber.e("characteristic null: %s", characteristicUuid.toString());
+                    retValue = false;
+                } else {
+                    retValue = bleGatt.readCharacteristic(characteristic);
+                    Timber.i("readCharacteristic result: %b", retValue);
+                }
+            }
         }
 
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-        if (characteristic == null) {
-            Timber.e("characteristic null: %s", characteristicUuid.toString());
-            return false;
+        if (!retValue) {
+            getManager().onReadCharacteristic(getAddress(), characteristicUuid, null);
         }
-
-        retValue = bleGatt.readCharacteristic(characteristic);
-        Timber.i("readCharacteristic result: %b", retValue);
         return retValue;
+    }
+
+    public void onReadImpl(String address, UUID uuid, byte[] value) {
+        if (iBleNotifyFunction != null) {
+            iBleNotifyFunction.onRead(context, address, uuid, value);
+        }
+    }
+
+    public void onWriteImpl(String address, UUID uuid, byte[] value) {
+        if (iBleNotifyFunction != null) {
+            iBleNotifyFunction.onWrite(context, address, uuid, value);
+        }
     }
 
     public IBleNotifyFunction getNotifyFunction() {
@@ -465,17 +487,14 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 return;
             }
             Timber.i("read: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " Status: " + status);
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onRead(context, gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
-            }
+
+            getManager().onReadCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             Timber.d("Write confirm: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " status: " + status);
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onWrite(context, gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
-            }
+            getManager().onWriteCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override

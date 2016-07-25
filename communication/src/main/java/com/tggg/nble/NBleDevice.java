@@ -3,7 +3,6 @@ package com.tggg.nble;
 import android.bluetooth.BluetoothDevice;
 
 import com.tggg.nble.Record.StatusChangeRecord;
-import com.tggg.nble.ifunction.IBleNotifyFunction;
 
 import java.util.List;
 import java.util.UUID;

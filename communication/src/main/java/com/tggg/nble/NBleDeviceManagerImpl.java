@@ -24,7 +24,7 @@ import timber.log.Timber;
  * <p/>
  * 连接描述：ble设备的连接策略基本上是用户发起的连接，是'直接'连接。当直接连接不上返回exception后，并且是维护状态时，再次连接就采用'自动'连接。
  */
-class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener {
+class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener, OperationManager.OnValidateOperationListener {
 
     /**
      * 记录的devices
@@ -49,6 +49,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     private Context context;
+
+    private Operation currentOperation;
 
     /**
      * 单例
@@ -212,17 +214,56 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     public void writeCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-
+        OperationManager.getInstance().pend(new Operation(Operation.OP_WRITE_CHARACTERISTIC, address, serviceUuid, characteristicUuid, data));
     }
 
     public void readCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid) {
-        //TODO 添加到等待队列中
-//        NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
-//        if (device != null) {
-//
-//        }
+        OperationManager.getInstance().pend(new Operation(Operation.OP_READ_CHARACTERISTIC, address, serviceUuid, characteristicUuid));
     }
 
+    public void onReadCharacteristic(String address, UUID uuid, byte[] value) {
+
+        synchronized (currentOperation) {
+            OperationManager.getInstance().done(currentOperation);
+            currentOperation = null;
+        }
+
+        ((NBleDeviceImpl) getDevice(address)).onReadImpl(address, uuid, value);
+    }
+
+    public void onWriteCharacteristic(String address, UUID uuid, byte[] value) {
+
+        synchronized (currentOperation) {
+            OperationManager.getInstance().done(currentOperation);
+            currentOperation = null;
+        }
+
+        ((NBleDeviceImpl) getDevice(address)).onWriteImpl(address, uuid, value);
+    }
+
+    @Override
+    public void onNextPendingOperation(Operation operation) {
+        synchronized (currentOperation) {
+            if (currentOperation == null) {
+                NBleDeviceImpl device = (NBleDeviceImpl) getDevice(operation.getAddress());
+                if (device != null && device.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
+                    currentOperation = operation;
+                    switch (operation.getType()) {
+                        case Operation.OP_READ_CHARACTERISTIC:
+                            device.readImpl(operation.getServiceUuid(), operation.getCharacteristicUuid());
+                            break;
+                        case Operation.OP_WRITE_CHARACTERISTIC:
+                            device.writeImpl(operation.getServiceUuid(), operation.getCharacteristicUuid(), operation.getData());
+                            break;
+                    }
+                } else {
+                    OperationManager.getInstance().done(operation);
+                }
+            } else {
+                Timber.w("currentOperation != null");
+            }
+        }
+    }
 
     /**
      * 序列化设备。只序列化设为“维护”的设备。
@@ -308,4 +349,5 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     public void onConnectException(NBleDevice device, int status) {
         reconnect(device);
     }
+
 }
