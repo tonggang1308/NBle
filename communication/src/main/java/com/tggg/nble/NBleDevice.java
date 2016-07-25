@@ -43,12 +43,12 @@ public interface NBleDevice {
     /**
      * 写数据
      */
-    boolean write(UUID serviceUuid, UUID characteristicUuid, byte[] data);
+    void write(UUID serviceUuid, UUID characteristicUuid, byte[] data);
 
     /**
      * 读数据
      */
-    boolean read(UUID serviceUuid, UUID characteristicUuid);
+    void read(UUID serviceUuid, UUID characteristicUuid);
 
     /**
      * 请求Rssi值。

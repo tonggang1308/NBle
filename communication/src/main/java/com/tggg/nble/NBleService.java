@@ -77,8 +77,7 @@ public class NBleService extends Service {
 
     private void closeAll() {
         Timber.i("service closeAll()");
-        for (String address : NBleDeviceManagerImpl.getInstance().getAllAddresses()) {
-            NBleDeviceImpl device = (NBleDeviceImpl) NBleDeviceManagerImpl.getInstance().getDevice(address);
+        for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
             device.disconnect();
         }
     }
@@ -86,9 +85,7 @@ public class NBleService extends Service {
     private void reconnectAll() {
         Timber.i("service reconnectAll()");
         if (NBleUtil.isAdapterEnable(this)) {
-            for (String address : NBleDeviceManagerImpl.getInstance().getAllAddresses()) {
-                NBleDeviceImpl device = (NBleDeviceImpl) NBleDeviceManagerImpl.getInstance().getDevice(address);
-
+            for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
                 if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && device.isMaintain()) {
                     device.connect();
                 }

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
@@ -33,12 +34,12 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据不同设备的notification的处理接口的列表，此表是根据设备名来区分。
      */
-    private Map<String, IBleNotifyFunction> mNotfitySubscrip = Collections.synchronizedMap(new LinkedHashMap<String, IBleNotifyFunction>());
+    private Map<String, IBleNotifyFunction> mNotifySubscription = Collections.synchronizedMap(new LinkedHashMap<String, IBleNotifyFunction>());
 
     /**
-     * 默认的notification的处理接口。当在mNotifysubscrip中没有找到对应设备的处理接口，则使用默认的。
+     * 默认的notification的处理接口。当在mNotifySubscription中没有找到对应设备的处理接口，则使用默认的。
      */
-    private IBleNotifyFunction mDefaultSubscrip;
+    private IBleNotifyFunction mDefaultSubscription;
 
     /**
      * 禁止外部新建实例
@@ -79,14 +80,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     public NBleDevice getDevice(String address) {
         return mDevices.get(address);
-    }
-
-    /**
-     * 获取所有维护设备的address列表
-     */
-    public List<String> getAllAddresses() {
-        ArrayList<String> allAddresses = new ArrayList<>(mDevices.keySet());
-        return Collections.unmodifiableList(allAddresses);
     }
 
     /**
@@ -157,16 +150,16 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 根据设备名获取notification的接口
      */
     public synchronized IBleNotifyFunction getNotification(String deviceName) {
-        IBleNotifyFunction ifunction = mNotfitySubscrip.get(deviceName);
-        return ifunction == null ? mDefaultSubscrip : ifunction;
+        IBleNotifyFunction ifunction = mNotifySubscription.get(deviceName);
+        return ifunction == null ? mDefaultSubscription : ifunction;
     }
 
     /**
      * 根据设备名注册notification的处理接口
      */
     public synchronized void registerNotification(String deviceName, IBleNotifyFunction iFunction) {
-        if (!mNotfitySubscrip.containsKey(deviceName)) {
-            mNotfitySubscrip.put(deviceName, iFunction);
+        if (!mNotifySubscription.containsKey(deviceName)) {
+            mNotifySubscription.put(deviceName, iFunction);
         }
     }
 
@@ -174,7 +167,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 注册notification的默认处理接口
      */
     public void registerDefaultNotification(IBleNotifyFunction iFunction) {
-        mDefaultSubscrip = iFunction;
+        mDefaultSubscription = iFunction;
     }
 
 
@@ -214,6 +207,18 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         // 在连接过程中做disconnect，会导致连接中断，且没有回调。
         // 所以每次重连需要先做close，以及后续的判断处理。
         reconnect(bleDevice);
+    }
+
+    public void writeCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+
+    }
+
+    public void readCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid) {
+        //TODO 添加到等待队列中
+//        NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
+//        if (device != null) {
+//
+//        }
     }
 
 

@@ -99,7 +99,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         this.bMaintain = maintain;
     }
 
-
     /**
      * 获取device
      */
@@ -107,7 +106,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return this.bleGatt.getDevice();
     }
 
-    public synchronized boolean write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+    private NBleDeviceManagerImpl getManager() {
+        return NBleDeviceManagerImpl.getInstance();
+    }
+
+    /**
+     * write接口，把操作丢给manager来管理
+     */
+    @Override
+    public void write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+        getManager().writeCharacteristic(getAddress(), serviceUuid, characteristicUuid, data);
+    }
+
+    public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
 
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
@@ -132,7 +143,15 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return retValue;
     }
 
-    public synchronized boolean read(UUID serviceUuid, UUID characteristicUuid) {
+    /**
+     * read接口，把操作丢给manager来管理
+     */
+    @Override
+    public void read(UUID serviceUuid, UUID characteristicUuid) {
+        getManager().readCharacteristic(getAddress(), serviceUuid, characteristicUuid);
+    }
+
+    public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
         boolean retValue;
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
@@ -185,22 +204,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     /**
-     * 从Manager中去除
-     */
-    private void removeFromManager() {
-        NBleDeviceManagerImpl.getInstance().remove(getAddress());
-    }
-
-
-    /**
-     * 添加到Manager中
-     */
-    private NBleDeviceImpl addToManager() {
-        NBleDeviceManagerImpl.getInstance().add(this);
-        return this;
-    }
-
-    /**
      * 获取当前设备的连接状态
      */
     public synchronized int getConnectionState() {
@@ -230,7 +233,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public synchronized void disconnect() {
-        NBleDeviceManagerImpl.getInstance().disconnect(this);
+        getManager().disconnect(this);
     }
 
     /**
@@ -259,7 +262,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     @Override
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
-        return NBleDeviceManagerImpl.getInstance().connectDirectly(this);
+        return getManager().connectDirectly(this);
     }
 
     /**
@@ -354,13 +357,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         }
     };
 
-    Action1<String> connectAction = new Action1<String>() {
-        @Override
-        public void call(String address) {
-            connect(true);
-        }
-    };
-
     private final BluetoothGattCallback gattCallBack = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -403,7 +399,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                             iBleNotifyFunction.onDisConnected(context, gatt.getDevice().getAddress());
                         }
 
-                        if (bluetoothAdapter.isEnabled() && NBleDeviceManagerImpl.getInstance().isMaintain(address)) {
+                        if (bluetoothAdapter.isEnabled() && getManager().isMaintain(address)) {
                             Timber.d("Device " + address + " is in maintain list");
                             if (status == BluetoothGatt.GATT_SUCCESS) {
                                 Timber.i(address + " gatt.connect()");
@@ -434,7 +430,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 }
             } catch (ConnectException e) {
 
-                NBleDeviceManagerImpl.getInstance().onConnectException(NBleDeviceImpl.this, status);
+                getManager().onConnectException(NBleDeviceImpl.this, status);
             }
         }
 
