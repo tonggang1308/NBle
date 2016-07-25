@@ -5,7 +5,10 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
+import android.provider.Settings;
 
 import timber.log.Timber;
 
@@ -86,6 +89,16 @@ public final class BluetoothUtil {
         return "gatt:" + gatt.getDevice().getName();
     }
 
+    /**
+     * 是否支持BLE功能
+     */
+    public static boolean isLESupport(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+    }
+
+    /**
+     * 判断蓝牙是否打开
+     */
     public static boolean isAdapterEnable(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -107,8 +120,6 @@ public final class BluetoothUtil {
 
     /**
      * 不提示，直接关闭蓝牙
-     *
-     * @param context
      */
     public static void disableBluetoothWithoutNotification(Context context) {
         BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -120,8 +131,6 @@ public final class BluetoothUtil {
 
     /**
      * 不提示，直接打开蓝牙
-     *
-     * @param context
      */
     public static void enableBluetoothWithoutNotification(Context context) {
         BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -129,5 +138,12 @@ public final class BluetoothUtil {
         if (bluetoothAdapter != null) {
             bluetoothAdapter.enable();
         }
+    }
+
+    /**
+     * 获取打开系统设置页面的intent
+     */
+    public static Intent getOpenSystemBluetoothSettingActivityIntent() {
+        return new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
     }
 }
