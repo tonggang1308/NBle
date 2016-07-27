@@ -36,6 +36,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public static final String SERIALIZE_ADDRESS = "address";
     public static final String SERIALIZE_NAME = "name";
+    public static final String SERIALIZE_MAINTAIN = "maintain";
 
     /**
      * Enable Notification的UUID
@@ -99,7 +100,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         this.bMaintain = maintain;
     }
 
-
     /**
      * 获取device
      */
@@ -107,61 +107,103 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return this.bleGatt.getDevice();
     }
 
-    public synchronized boolean write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+    private NBleDeviceManagerImpl getManager() {
+        return NBleDeviceManagerImpl.getInstance();
+    }
 
+    /**
+     * write接口，把操作丢给manager来管理
+     */
+    @Override
+    public void write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+        getManager().writeCharacteristic(getAddress(), serviceUuid, characteristicUuid, data);
+    }
+
+    public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+        boolean retValue = true;
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
-            return false;
+            retValue = false;
+        } else {
+            BluetoothGattService service = bleGatt.getService(serviceUuid);
+            if (service == null) {
+                Timber.e("service null: %s", serviceUuid.toString());
+                retValue = false;
+            } else {
+
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+                if (characteristic == null) {
+                    Timber.e("characteristic null: %s", characteristicUuid.toString());
+                    retValue = false;
+                } else {
+                    characteristic.setValue(data);
+                    retValue = bleGatt.writeCharacteristic(characteristic);
+                    Timber.i("writeCharacteristic result: %b", retValue);
+                }
+            }
+        }
+        if (!retValue) {
+            getManager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
         }
 
-        BluetoothGattService service = bleGatt.getService(serviceUuid);
-        if (service == null) {
-            Timber.e("service null: %s", serviceUuid.toString());
-            return false;
-        }
-
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-        if (characteristic == null) {
-            Timber.e("characteristic null: %s", characteristicUuid.toString());
-            return false;
-        }
-
-        characteristic.setValue(data);
-        boolean retValue = bleGatt.writeCharacteristic(characteristic);
-        Timber.i("writeCharacteristic result: %b", retValue);
         return retValue;
     }
 
-    public synchronized boolean read(UUID serviceUuid, UUID characteristicUuid) {
-        boolean retValue;
+    /**
+     * read接口，把操作丢给manager来管理
+     */
+    @Override
+    public void read(UUID serviceUuid, UUID characteristicUuid) {
+        getManager().readCharacteristic(getAddress(), serviceUuid, characteristicUuid);
+    }
+
+    public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
+        boolean retValue = true;
         if (bleGatt == null) {
             Timber.e("gatt not connected: %s", getAddress());
-            return false;
-        }
-        BluetoothGattService service = null;
-        try {
-            service = bleGatt.getService(serviceUuid);
-        } catch (Exception e) {
-            Timber.e(e.getMessage());
-        }
-        if (service == null) {
+            retValue = false;
+        } else {
+            BluetoothGattService service = null;
+            try {
+                service = bleGatt.getService(serviceUuid);
+            } catch (Exception e) {
+                Timber.e(e.getMessage());
+            }
+            if (service == null) {
 //            Timber.e("service null: %s", serviceUuid.toString());
 //            Timber.e("service count: %d", bleGatt.getServices().size());
 //            for (BluetoothGattService ser : bleGatt.getServices()) {
 //                Timber.e("service uuid: %s", ser.getUuid().toString());
 //            }
-            return false;
+                retValue = false;
+            } else {
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+                if (characteristic == null) {
+                    Timber.e("characteristic null: %s", characteristicUuid.toString());
+                    retValue = false;
+                } else {
+                    retValue = bleGatt.readCharacteristic(characteristic);
+                    Timber.i("readCharacteristic result: %b", retValue);
+                }
+            }
         }
 
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-        if (characteristic == null) {
-            Timber.e("characteristic null: %s", characteristicUuid.toString());
-            return false;
+        if (!retValue) {
+            getManager().onReadCharacteristic(getAddress(), characteristicUuid, null);
         }
-
-        retValue = bleGatt.readCharacteristic(characteristic);
-        Timber.i("readCharacteristic result: %b", retValue);
         return retValue;
+    }
+
+    public void onReadImpl(String address, UUID uuid, byte[] value) {
+        if (iBleNotifyFunction != null) {
+            iBleNotifyFunction.onRead(context, address, uuid, value);
+        }
+    }
+
+    public void onWriteImpl(String address, UUID uuid, byte[] value) {
+        if (iBleNotifyFunction != null) {
+            iBleNotifyFunction.onWrite(context, address, uuid, value);
+        }
     }
 
     public IBleNotifyFunction getNotifyFunction() {
@@ -185,22 +227,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     /**
-     * 从Manager中去除
-     */
-    private void removeFromManager() {
-        NBleDeviceManagerImpl.getInstance().remove(getAddress());
-    }
-
-
-    /**
-     * 添加到Manager中
-     */
-    private NBleDeviceImpl addToManager() {
-        NBleDeviceManagerImpl.getInstance().add(this);
-        return this;
-    }
-
-    /**
      * 获取当前设备的连接状态
      */
     public synchronized int getConnectionState() {
@@ -211,16 +237,16 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         BluetoothDevice device = bleGatt.getDevice();
         int state = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getConnectionState(device, BluetoothProfile.GATT);
-        Timber.d("getConnectedState() addr:%s, state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+        Timber.d("getConnectedState() addr:%s, state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
 
         if (isConnecting) {
             state = BluetoothProfile.STATE_CONNECTING;
-            Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+            Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
             return state;
         }
 
         state = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getConnectionState(device, BluetoothProfile.GATT);
-        Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), BluetoothUtil.connectionStateToString(state));
+        Timber.d("getConnectedState() addr:%s, return state:%s", device.getAddress(), NBleUtil.connectionStateToString(state));
 
         return state;
     }
@@ -230,7 +256,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public synchronized void disconnect() {
-        NBleDeviceManagerImpl.getInstance().disconnect(this);
+        getManager().disconnect(this);
     }
 
     /**
@@ -259,7 +285,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     @Override
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
-        return NBleDeviceManagerImpl.getInstance().connectDirectly(this);
+        return getManager().connectDirectly(this);
     }
 
     /**
@@ -318,6 +344,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = new JSONObject();
         object.put(SERIALIZE_ADDRESS, getAddress());
         object.put(SERIALIZE_NAME, getName());
+        object.put(SERIALIZE_MAINTAIN, isMaintain());
         return object.toJSONString();
     }
 
@@ -325,7 +352,11 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         JSONObject object = JSON.parseObject(json);
         String address = object.getString(SERIALIZE_ADDRESS);
         String name = object.getString(SERIALIZE_NAME);
-        return new NBleDeviceImpl(context, address, name);
+        Boolean maintain = object.getBoolean(SERIALIZE_MAINTAIN);
+        NBleDeviceImpl device = new NBleDeviceImpl(context, address, name);
+        if (maintain != null)
+            device.setMaintain(maintain);
+        return device;
     }
 
     /**
@@ -354,20 +385,13 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         }
     };
 
-    Action1<String> connectAction = new Action1<String>() {
-        @Override
-        public void call(String address) {
-            connect(true);
-        }
-    };
-
     private final BluetoothGattCallback gattCallBack = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             final String address = gatt.getDevice().getAddress();
             String deviceName = gatt.getDevice().getName();
 
-            Timber.i(getName() + ", " + address + ", " + iBleNotifyFunction.getClass().getName() + ", Connection operation status: " + BluetoothUtil.statusToString(status) + ", New connection state: " + BluetoothUtil.connectionStateToString(newState));
+            Timber.i(getName() + ", " + address + ", " + iBleNotifyFunction.getClass().getName() + ", Connection operation status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState));
 
             try {
                 isConnecting = false;
@@ -403,7 +427,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                             iBleNotifyFunction.onDisConnected(context, gatt.getDevice().getAddress());
                         }
 
-                        if (bluetoothAdapter.isEnabled() && NBleDeviceManagerImpl.getInstance().isMaintain(address)) {
+                        if (bluetoothAdapter.isEnabled() && getManager().isMaintain(address)) {
                             Timber.d("Device " + address + " is in maintain list");
                             if (status == BluetoothGatt.GATT_SUCCESS) {
                                 Timber.i(address + " gatt.connect()");
@@ -434,7 +458,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 }
             } catch (ConnectException e) {
 
-                NBleDeviceManagerImpl.getInstance().onConnectException(NBleDeviceImpl.this, status);
+                getManager().onConnectException(NBleDeviceImpl.this, status);
             }
         }
 
@@ -463,17 +487,14 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 return;
             }
             Timber.i("read: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " Status: " + status);
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onRead(context, gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
-            }
+
+            getManager().onReadCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             Timber.d("Write confirm: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " status: " + status);
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onWrite(context, gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
-            }
+            getManager().onWriteCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override

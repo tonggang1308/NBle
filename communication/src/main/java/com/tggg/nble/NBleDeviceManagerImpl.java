@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
@@ -23,7 +24,7 @@ import timber.log.Timber;
  * <p/>
  * 连接描述：ble设备的连接策略基本上是用户发起的连接，是'直接'连接。当直接连接不上返回exception后，并且是维护状态时，再次连接就采用'自动'连接。
  */
-class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener {
+class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener, OperationManager.OnValidateOperationListener {
 
     /**
      * 记录的devices
@@ -33,12 +34,12 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据不同设备的notification的处理接口的列表，此表是根据设备名来区分。
      */
-    private Map<String, IBleNotifyFunction> mNotfitySubscrip = Collections.synchronizedMap(new LinkedHashMap<String, IBleNotifyFunction>());
+    private Map<String, IBleNotifyFunction> mNotifySubscription = Collections.synchronizedMap(new LinkedHashMap<String, IBleNotifyFunction>());
 
     /**
-     * 默认的notification的处理接口。当在mNotifysubscrip中没有找到对应设备的处理接口，则使用默认的。
+     * 默认的notification的处理接口。当在mNotifySubscription中没有找到对应设备的处理接口，则使用默认的。
      */
-    private IBleNotifyFunction mDefaultSubscrip;
+    private IBleNotifyFunction mDefaultSubscription;
 
     /**
      * 禁止外部新建实例
@@ -48,6 +49,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     private Context context;
+
+    private Operation currentOperation;
 
     /**
      * 单例
@@ -79,14 +82,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     public NBleDevice getDevice(String address) {
         return mDevices.get(address);
-    }
-
-    /**
-     * 获取所有维护设备的address列表
-     */
-    public List<String> getAllAddresses() {
-        ArrayList<String> allAddresses = new ArrayList<>(mDevices.keySet());
-        return Collections.unmodifiableList(allAddresses);
     }
 
     /**
@@ -139,7 +134,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据device设置设备的维护状态
      */
-    public synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
+    protected synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
         device.setMaintain(bMaintain);
         NBleDeviceManagerImpl.getInstance().storeDevices();
     }
@@ -157,16 +152,16 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 根据设备名获取notification的接口
      */
     public synchronized IBleNotifyFunction getNotification(String deviceName) {
-        IBleNotifyFunction ifunction = mNotfitySubscrip.get(deviceName);
-        return ifunction == null ? mDefaultSubscrip : ifunction;
+        IBleNotifyFunction ifunction = mNotifySubscription.get(deviceName);
+        return ifunction == null ? mDefaultSubscription : ifunction;
     }
 
     /**
      * 根据设备名注册notification的处理接口
      */
     public synchronized void registerNotification(String deviceName, IBleNotifyFunction iFunction) {
-        if (!mNotfitySubscrip.containsKey(deviceName)) {
-            mNotfitySubscrip.put(deviceName, iFunction);
+        if (!mNotifySubscription.containsKey(deviceName)) {
+            mNotifySubscription.put(deviceName, iFunction);
         }
     }
 
@@ -174,19 +169,21 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 注册notification的默认处理接口
      */
     public void registerDefaultNotification(IBleNotifyFunction iFunction) {
-        mDefaultSubscrip = iFunction;
+        mDefaultSubscription = iFunction;
     }
-
 
     /**
      * 添加设备
      */
-    public synchronized void add(NBleDevice deviceSettingItem) {
+    public synchronized void add(NBleDevice deviceSettingItem, boolean store) {
         mDevices.put(deviceSettingItem.getAddress(), (NBleDeviceImpl) deviceSettingItem);
-
-        storeDevices();
+        if (store)
+            storeDevices();
     }
 
+    public synchronized void add(NBleDevice deviceSettingItem) {
+        add(deviceSettingItem, true);
+    }
 
     /**
      * 删除设备
@@ -216,6 +213,57 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         reconnect(bleDevice);
     }
 
+    public void writeCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid, byte[] data) {
+        OperationManager.getInstance().pend(new Operation(Operation.OP_WRITE_CHARACTERISTIC, address, serviceUuid, characteristicUuid, data));
+    }
+
+    public void readCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid) {
+        OperationManager.getInstance().pend(new Operation(Operation.OP_READ_CHARACTERISTIC, address, serviceUuid, characteristicUuid));
+    }
+
+    public void onReadCharacteristic(String address, UUID uuid, byte[] value) {
+
+        synchronized (currentOperation) {
+            OperationManager.getInstance().done(currentOperation);
+            currentOperation = null;
+        }
+
+        ((NBleDeviceImpl) getDevice(address)).onReadImpl(address, uuid, value);
+    }
+
+    public void onWriteCharacteristic(String address, UUID uuid, byte[] value) {
+
+        synchronized (currentOperation) {
+            OperationManager.getInstance().done(currentOperation);
+            currentOperation = null;
+        }
+
+        ((NBleDeviceImpl) getDevice(address)).onWriteImpl(address, uuid, value);
+    }
+
+    @Override
+    public void onNextPendingOperation(Operation operation) {
+        synchronized (currentOperation) {
+            if (currentOperation == null) {
+                NBleDeviceImpl device = (NBleDeviceImpl) getDevice(operation.getAddress());
+                if (device != null && device.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
+                    currentOperation = operation;
+                    switch (operation.getType()) {
+                        case Operation.OP_READ_CHARACTERISTIC:
+                            device.readImpl(operation.getServiceUuid(), operation.getCharacteristicUuid());
+                            break;
+                        case Operation.OP_WRITE_CHARACTERISTIC:
+                            device.writeImpl(operation.getServiceUuid(), operation.getCharacteristicUuid(), operation.getData());
+                            break;
+                    }
+                } else {
+                    OperationManager.getInstance().done(operation);
+                }
+            } else {
+                Timber.w("currentOperation != null");
+            }
+        }
+    }
 
     /**
      * 序列化设备。只序列化设为“维护”的设备。
@@ -225,8 +273,9 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         List<String> serializationList = new ArrayList<String>();
         synchronized (mDevices) {
             for (NBleDevice device : mDevices.values()) {
-                if (((NBleDeviceImpl) device).isMaintain()) {
-                    Timber.v("Store Device:%s", device.getAddress());
+                if (device.isMaintain()) {
+                    Timber.v("Store Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
+                    // 连接中，或者maintain的设备都要store下来
                     serializationList.add(((NBleDeviceImpl) device).serialize());
                 }
             }
@@ -243,10 +292,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
             synchronized (mDevices) {
                 for (String serialization : serializationList) {
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
-                    Timber.v("Restore Device:%s", device.getAddress());
-                    if (device != null) {
-                        setMaintain(device, true);
-                    }
+                    add(device);
+                    Timber.v("Restore Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
                 }
             }
         }
@@ -269,7 +316,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                 .filter(new Func1<NBleDevice, Boolean>() {
                     @Override
                     public Boolean call(NBleDevice device) {
-                        return BluetoothUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
+                        return NBleUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
                     }
                 })
                 .delay(2, TimeUnit.SECONDS)
@@ -302,4 +349,5 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     public void onConnectException(NBleDevice device, int status) {
         reconnect(device);
     }
+
 }

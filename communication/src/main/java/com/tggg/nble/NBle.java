@@ -28,6 +28,9 @@ public final class NBle {
 
         // BLE Manager
         NBleDeviceManagerImpl.getInstance().init(context);
+
+        // Operation Manager
+        OperationManager.getInstance().init(NBleDeviceManagerImpl.getInstance());
     }
 
     public static class ScannerBuilder {
