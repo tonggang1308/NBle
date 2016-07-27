@@ -161,9 +161,9 @@ public class ScanActivity extends AppCompatActivity
     }
 
     @OnShowRationale({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
-    void showRationaleForCamera(final PermissionRequest request) {
+    void showRationaleForBluetooth(final PermissionRequest request) {
         new AlertDialog.Builder(this)
-                .setMessage("s")
+                .setMessage("Could you allow GPS?")
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
