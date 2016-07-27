@@ -20,6 +20,17 @@ android {
     }
 }
 
+// 配置上传lib的信息
+ext {
+    PUBLISH_GROUP_ID = 'xyz.gangle'
+    PUBLISH_ARTIFACT_ID = 'reconnect-ble'
+    PUBLISH_VERSION = '1.0.0'
+}
+
+apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
+
+//
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.4.0'
