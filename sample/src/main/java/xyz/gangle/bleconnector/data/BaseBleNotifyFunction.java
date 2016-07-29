@@ -24,11 +24,6 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     }
 
     @Override
-    public void onClose(Context context, String address) {
-        postEvent(new DeviceStateEvent(DeviceStateEvent.CLOSE, address));
-    }
-
-    @Override
     public void onRead(Context context, String address, UUID characUuid, byte[] value) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.ONREAD, address, characUuid, value));
     }
@@ -36,6 +31,11 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     @Override
     public void onWrite(Context context, String address, UUID characUuid, byte[] value) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.ONWRITE, address, characUuid, value));
+    }
+
+    @Override
+    public void onConnectStart(Context context, String address) {
+        postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECT_START, address));
     }
 
     @Override
@@ -49,8 +49,13 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     }
 
     @Override
-    public void onDisConnected(Context context, String address) {
+    public void onDisconnected(Context context, String address) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.DISCONNECTED, address));
+    }
+
+    @Override
+    public void onConnectFinish(Context context, String address) {
+        postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECT_FINISH, address));
     }
 
     @Override
