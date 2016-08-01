@@ -20,6 +20,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".presentation.activities.ScanSettingActivity"
+            android:label="@string/setting_scan" />
+
         <service android:name="com.tggg.nble.NBleService" />
 
         <receiver

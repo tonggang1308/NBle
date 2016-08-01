@@ -7,4 +7,12 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
+
+    <dimen name="setting_item_height">48dp</dimen>
+    <dimen name="margin_tiny">2dp</dimen>
+    <dimen name="margin_small">4dp</dimen>
+    <dimen name="margin_normal">8dp</dimen>
+    <dimen name="margin_big">16dp</dimen>
+    <dimen name="margin_huge">32dp</dimen>
+    <dimen name="margin_very_huge">64dp</dimen>
 </resources>

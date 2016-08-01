@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_scan"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="@string/setting_scan" />
-        <item
-            android:id="@+id/nav_filter"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="@string/setting_filter" />
-        <item
-            android:id="@+id/nav_sort"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="@string/setting_sort" />
-        <item
-            android:id="@+id/nav_device_info"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="@string/setting_device_info" />
+    <item android:title="Settings">
+        <menu>
+            <item
+                android:id="@+id/nav_scan"
+                android:icon="@drawable/ic_menu_camera"
+                android:title="@string/setting_scan" />
+            <item
+                android:id="@+id/nav_filter"
+                android:icon="@drawable/ic_menu_camera"
+                android:title="@string/setting_filter" />
+            <item
+                android:id="@+id/nav_sort"
+                android:icon="@drawable/ic_menu_gallery"
+                android:title="@string/setting_sort" />
+            <item
+                android:id="@+id/nav_device_info"
+                android:icon="@drawable/ic_menu_slideshow"
+                android:title="@string/setting_device_info" />
 
-    </group>
+        </menu>
+    </item>
 
     <item android:title="Communicate">
         <menu>
@@ -30,11 +32,13 @@
             <item
                 android:id="@+id/nav_help"
                 android:icon="@drawable/ic_menu_slideshow"
-                android:title="@string/setting_help" />
+                android:title="@string/setting_help"
+                android:visible="false" />
             <item
                 android:id="@+id/nav_faq"
                 android:icon="@drawable/ic_menu_slideshow"
-                android:title="@string/setting_faq" />
+                android:title="@string/setting_faq"
+                android:visible="false" />
             <item
                 android:id="@+id/nav_about"
                 android:icon="@drawable/ic_menu_slideshow"

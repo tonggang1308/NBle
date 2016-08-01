@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothProfile;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -49,6 +50,7 @@ import xyz.gangle.bleconnector.R;
 import xyz.gangle.bleconnector.data.DeviceInfo;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
+import xyz.gangle.bleconnector.presentation.fragments.ScanPeriodFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
 
@@ -288,6 +290,8 @@ public class ScanActivity extends AppCompatActivity
 
         if (id == R.id.nav_scan) {
             // Handle the camera action
+            ScanSettingActivity.fragment = new ScanPeriodFragment();
+            startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_filter) {
 
         } else if (id == R.id.nav_sort) {
