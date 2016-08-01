@@ -1,4 +1,4 @@
-package xyz.gangle.bleconnector.presentation;
+package xyz.gangle.bleconnector.presentation.activities;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -46,6 +46,11 @@ import permissions.dispatcher.PermissionRequest;
 import permissions.dispatcher.RuntimePermissions;
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
+import xyz.gangle.bleconnector.data.DeviceInfo;
+import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
+import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
+import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
+import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
 
 
 @RuntimePermissions
@@ -121,18 +126,18 @@ public class ScanActivity extends AppCompatActivity
             DeviceInfo deviceInfo = getDeviceInfo(event.address);
             if (deviceInfo != null) {
                 if (event.type == DeviceStateEvent.CONNECTED) {
-                    deviceInfo.status = DeviceInfo.CONNECTED;
+                    deviceInfo.setStatus(DeviceInfo.CONNECTED);
                 } else if (event.type == DeviceStateEvent.DISCONNECTED) {
-                    deviceInfo.status = DeviceInfo.DISCONNECTED;
-                    deviceInfo.rssi = null;
+                    deviceInfo.setStatus(DeviceInfo.DISCONNECTED);
+                    deviceInfo.setRssi(null);
                 } else if (event.type == DeviceStateEvent.CONNECTING) {
-                    deviceInfo.status = DeviceInfo.CONNECTING;
-                } else if (event.type == DeviceStateEvent.CLOSE) {
-                    deviceInfo.status = DeviceInfo.CLOSE;
-                    deviceInfo.rssi = null;
+                    deviceInfo.setStatus(DeviceInfo.CONNECTING);
+                } else if (event.type == DeviceStateEvent.CONNECT_FINISH) {
+                    deviceInfo.setStatus(DeviceInfo.CLOSE);
+                    deviceInfo.setRssi(null);
                 } else if (event.type == DeviceStateEvent.RSSI) {
                     int rssi = CommonUtil.byte2int(event.value);
-                    deviceInfo.rssi = rssi;
+                    deviceInfo.setRssi(rssi);
                 } else if (event.type == DeviceStateEvent.NOTIFY) {
                 } else {
                     return;
@@ -197,9 +202,11 @@ public class ScanActivity extends AppCompatActivity
                 final DeviceInfo newDevice = new DeviceInfo(address, name, rssi, DeviceInfo.DISCONNECTED);
                 addDeviceInfo(newDevice);
             } else {
-                info.rssi = rssi;
-                info.name = name;
-                info.status = DeviceInfo.DISCONNECTED;
+
+                info.setRssi(rssi);
+                info.setName(name);
+                info.setStatus(DeviceInfo.DISCONNECTED);
+                ;
                 recyclerView.getAdapter().notifyItemChanged(devList.indexOf(info));
             }
         }
@@ -208,7 +215,7 @@ public class ScanActivity extends AppCompatActivity
 
     protected int getPositionByAddress(String address) {
         for (int i = 0; i < devList.size(); i++) {
-            if (devList.get(i).address.equals(address))
+            if (devList.get(i).getAddress().equals(address))
                 return i;
         }
         return -1;
@@ -279,17 +286,21 @@ public class ScanActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_scan) {
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        } else if (id == R.id.nav_filter) {
 
-        } else if (id == R.id.nav_slideshow) {
+        } else if (id == R.id.nav_sort) {
 
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.nav_device_info) {
 
-        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_feedback) {
 
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.nav_faq) {
+
+        } else if (id == R.id.nav_help) {
+
+        } else if (id == R.id.nav_about) {
 
         }
 
@@ -304,8 +315,8 @@ public class ScanActivity extends AppCompatActivity
         //获得AdapterContextMenuInfo,以此来获得选择的listview项目
 //        int position = menuInfo.position;
         if (selectedDeviceInfo != null) {
-            String address = selectedDeviceInfo.address;
-            String name = selectedDeviceInfo.name;
+            String address = selectedDeviceInfo.getAddress();
+            String name = selectedDeviceInfo.getName();
             NBleDevice device = NBle.getManager().getDevice(address);
             switch (item.getItemId()) {
                 case MENU_ITEM_ADD_MAINTAIN:
@@ -345,7 +356,7 @@ public class ScanActivity extends AppCompatActivity
 
     protected DeviceInfo getDeviceInfo(String address) {
         for (DeviceInfo info : devList) {
-            if (info.address.equals(address)) {
+            if (info.getAddress().equals(address)) {
                 return info;
             }
         }
@@ -353,7 +364,7 @@ public class ScanActivity extends AppCompatActivity
     }
 
     protected boolean addDeviceInfo(DeviceInfo info) {
-        if (getDeviceInfo(info.address) == null) {
+        if (getDeviceInfo(info.getAddress()) == null) {
             devList.add(info);
             recyclerView.getAdapter().notifyItemInserted(devList.size() - 1);
             return true;
@@ -397,12 +408,12 @@ public class ScanActivity extends AppCompatActivity
         Toast.makeText(ScanActivity.this, info.getStatusString(), Toast.LENGTH_SHORT).show();
 
 
-        if (!NBle.getManager().isMaintain(info.address))
+        if (!NBle.getManager().isMaintain(info.getAddress()))
             menu.add(0, MENU_ITEM_ADD_MAINTAIN, 0, "add to Maintain list");
         else
             menu.add(0, MENU_ITEM_REMOVE_MAINTAIN, 0, "remove from Maintain list");
 
-        NBleDevice device = NBle.getManager().getDevice(info.address);
+        NBleDevice device = NBle.getManager().getDevice(info.getAddress());
         if (device == null) {
             menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
         } else if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {

@@ -9,10 +9,6 @@ import timber.log.Timber;
 import xyz.gangle.bleconnector.BuildConfig;
 import xyz.gangle.bleconnector.data.BaseBleNotifyFunction;
 
-/**
- * Created by yiyidu on 5/28/16.
- */
-
 public class ConnectorApplication extends Application {
 
     private static ConnectorApplication INSTANCE;
@@ -33,7 +29,6 @@ public class ConnectorApplication extends Application {
 
         // 注册响应
         NBle.getManager().registerDefaultNotification(new BaseBleNotifyFunction());
-
 
 
     }
