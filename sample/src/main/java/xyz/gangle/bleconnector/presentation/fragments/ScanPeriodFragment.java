@@ -62,7 +62,7 @@ public class ScanPeriodFragment extends BaseFragment {
                     SharedPrefManager.getInstance().setScanMode(isChecked ? MODE_CONTINUOUS : MODE_MANUAL);
                     updateStatus();
                 } else {
-                    Toast.makeText(getActivity(), "code checked change", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getActivity(), "code checked change", Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -15,6 +15,8 @@
     <string name="setting_faq">FAQ</string>
     <string name="setting_about">About</string>
 
+    <string name="mac_address_regx">0123456789abcdefABCDEF:</string>
+
     <string name="apply">Apply</string>
 
 </resources>

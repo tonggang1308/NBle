@@ -19,6 +19,31 @@ public class SharedPrefManager {
      */
     public static final String KEY_SCAN_PERIOD = "KEY_SCAN_PERIOD";
 
+    /**
+     * filter NAME
+     */
+    public static final String KEY_FILTER_NAME_ENABLE = "KEY_FILTER_NAME_ENABLE";
+    public static final String KEY_FILTER_NAME_VALUE = "KEY_FILTER_NAME_VALUE";
+
+    /**
+     * filter MAC
+     */
+    public static final String KEY_FILTER_MAC_ENABLE = "KEY_FILTER_MAC_ENABLE";
+    public static final String KEY_FILTER_MAC_VALUE = "KEY_FILTER_MAC_VALUE";
+
+    /**
+     * filter MAC SCOPE
+     */
+    public static final String KEY_FILTER_MAC_SCOPE_ENABLE = "KEY_FILTER_MAC_SCOPE_ENABLE";
+    public static final String KEY_FILTER_MAC_START_VALUE = "KEY_FILTER_MAC_START_VALUE";
+    public static final String KEY_FILTER_MAC_END_VALUE = "KEY_FILTER_MAC_END_VALUE";
+
+    /**
+     * filter RSSI
+     */
+    public static final String KEY_FILTER_RSSI_ENABLE = "KEY_FILTER_RSSI_ENABLE";
+    public static final String KEY_FILTER_RSSI_VALUE = "KEY_FILTER_RSSI_VALUE";
+
     private SharedPrefManager() {
     }
 
@@ -54,6 +79,71 @@ public class SharedPrefManager {
 
     public void setScanPeriod(int period) {
         PreferenceUtil.write(sharedPreferences, KEY_SCAN_PERIOD, period);
+    }
+
+
+    /**
+     * Filter Enable
+     */
+    public boolean isFilterEnable(String key) {
+        return PreferenceUtil.readBoolean(sharedPreferences, key);
+    }
+
+    public void setFilterEnable(String key, boolean enable) {
+        PreferenceUtil.write(sharedPreferences, key, enable);
+    }
+
+    /**
+     * Filter Name
+     */
+    public String getFilterName() {
+        return PreferenceUtil.readString(sharedPreferences, KEY_FILTER_NAME_VALUE, "");
+    }
+
+    public void setFilterName(String name) {
+        PreferenceUtil.write(sharedPreferences, KEY_FILTER_NAME_VALUE, name);
+    }
+
+
+    /**
+     * Filter Mac
+     */
+    public String getFilterMac() {
+        return PreferenceUtil.readString(sharedPreferences, KEY_FILTER_MAC_VALUE, "");
+    }
+
+    public void setFilterMac(String mac) {
+        PreferenceUtil.write(sharedPreferences, KEY_FILTER_MAC_VALUE, mac);
+    }
+
+    /**
+     * Filter Mac Scope
+     */
+    public String getFilterMacStart() {
+        return PreferenceUtil.readString(sharedPreferences, KEY_FILTER_MAC_START_VALUE, "");
+    }
+
+    public void setFilterMacStart(String mac) {
+        PreferenceUtil.write(sharedPreferences, KEY_FILTER_MAC_START_VALUE, mac);
+    }
+
+    public String getFilterMacEnd() {
+        return PreferenceUtil.readString(sharedPreferences, KEY_FILTER_MAC_END_VALUE, "");
+    }
+
+    public void setFilterMacEnd(String mac) {
+        PreferenceUtil.write(sharedPreferences, KEY_FILTER_MAC_END_VALUE, mac);
+    }
+
+    /**
+     * Filter RSSI
+     */
+    public int getFilterRssi() {
+        return PreferenceUtil.readInt(sharedPreferences, KEY_FILTER_RSSI_VALUE, -99);
+    }
+
+    public void setFilterRssi(int rssi) {
+        PreferenceUtil.write(sharedPreferences, KEY_FILTER_RSSI_VALUE, rssi);
     }
 
 }

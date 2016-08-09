@@ -50,6 +50,7 @@ import xyz.gangle.bleconnector.R;
 import xyz.gangle.bleconnector.data.DeviceInfo;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
+import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanPeriodFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
@@ -293,7 +294,8 @@ public class ScanActivity extends AppCompatActivity
             ScanSettingActivity.fragment = new ScanPeriodFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_filter) {
-
+            ScanSettingActivity.fragment = new ScanFilterFragment();
+            startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_sort) {
 
         } else if (id == R.id.nav_device_info) {
