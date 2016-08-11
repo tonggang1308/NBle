@@ -1,17 +1,13 @@
 package xyz.gangle.bleconnector.presentation.fragments;
 
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.InputFilter;
-import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.SeekBar;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import butterknife.BindView;
@@ -24,8 +20,6 @@ import xyz.gangle.bleconnector.presentation.customviews.MacAddressTextWatcher;
 public class ScanFilterFragment extends BaseFragment {
 
     private static final String MAC_ADDRES_RET = "^([0-9a-fA-F]{2})(([/\\s:-][0-9a-fA-F]{2}){5})$";
-    private static final int MODE_CONTINUOUS = 0;
-    private static final int MODE_MANUAL = 1;
 
     @BindView(R.id.rl_name)
     View nameLayout;
@@ -78,7 +72,7 @@ public class ScanFilterFragment extends BaseFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         initValue();
-        updateStatus();
+        updateValideStatus();
 
         macEdit.addTextChangedListener(new MacAddressTextWatcher(macEdit, MAC_ADDRES_RET));
         macEdit.setFilters(new InputFilter[]{new InputFilter.AllCaps(), new InputFilter.LengthFilter(17)});
@@ -88,6 +82,24 @@ public class ScanFilterFragment extends BaseFragment {
 
         macEndEdit.addTextChangedListener(new MacAddressTextWatcher(macEndEdit, MAC_ADDRES_RET));
         macEndEdit.setFilters(new InputFilter[]{new InputFilter.AllCaps(), new InputFilter.LengthFilter(17)});
+
+        rssiSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser)
+                    rssiText.setText(String.format("%d dBm", 0 - progress));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
     }
 
@@ -106,7 +118,7 @@ public class ScanFilterFragment extends BaseFragment {
     /**
      * 更新状态
      */
-    protected void updateStatus() {
+    protected void updateValideStatus() {
         setParentLayoutEnableExcludeSelf(nameCkb, nameCkb.isChecked());
 
         setParentLayoutEnableExcludeSelf(macCkb, macCkb.isChecked());
@@ -132,14 +144,21 @@ public class ScanFilterFragment extends BaseFragment {
 
         rssiCkb.setChecked(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE));
         int rssi = SharedPrefManager.getInstance().getFilterRssi();
-        rssiText.setText(rssi + " dBm");
+        rssiSeekbar.setMax(100);
+        rssiSeekbar.setProgress(rssi);
+        rssiText.setText(String.format("%d dBm", 0 - rssi));
         rssiSeekbar.setProgress(Math.abs(rssi));
     }
 
+    /**
+     * 保存设置和参数
+     */
     protected void storeValidFilter() {
+        // name
         SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE, nameCkb.isChecked());
         SharedPrefManager.getInstance().setFilterName(nameEdit.getText().toString());
 
+        // mac address
         String macAddress = macEdit.getText().toString();
         if (macAddress.matches(MAC_ADDRES_RET)) {
             SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE, macCkb.isChecked());
@@ -149,6 +168,7 @@ public class ScanFilterFragment extends BaseFragment {
             SharedPrefManager.getInstance().setFilterMac("");
         }
 
+        // mac address scope
         String macAddressStart = macStartEdit.getText().toString();
         String macAddressEnd = macStartEdit.getText().toString();
         if ((macAddressStart.matches(MAC_ADDRES_RET) && macAddressEnd.matches(MAC_ADDRES_RET))) {
@@ -160,6 +180,10 @@ public class ScanFilterFragment extends BaseFragment {
             SharedPrefManager.getInstance().setFilterMacStart("");
             SharedPrefManager.getInstance().setFilterMacEnd("");
         }
+
+        // seek bar
+        SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE, rssiCkb.isChecked());
+        SharedPrefManager.getInstance().setFilterRssi(rssiSeekbar.getProgress());
     }
 
     @Override
@@ -170,6 +194,6 @@ public class ScanFilterFragment extends BaseFragment {
 
     @OnCheckedChanged({R.id.checkbox_mac, R.id.checkbox_mac_scope, R.id.checkbox_name, R.id.checkbox_rssi})
     protected void onCheckBoxCheckedChanged() {
-        updateStatus();
+        updateValideStatus();
     }
 }
