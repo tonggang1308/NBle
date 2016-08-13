@@ -34,6 +34,7 @@
                 android:background="@null"
                 android:hint="Name"
                 android:maxLength="@integer/name_text_max"
+                android:singleLine="true"
                 android:textSize="14sp" />
 
             <CheckBox
@@ -112,11 +113,11 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
                 android:layout_marginTop="@dimen/margin_big"
-                android:maxLines="1"
                 android:background="@null"
                 android:digits="@string/mac_address_regx"
                 android:gravity="center_horizontal"
                 android:hint="AA:BB:CC:DD:EE:FF"
+                android:maxLines="1"
                 android:textSize="14sp" />
 
             <TextView

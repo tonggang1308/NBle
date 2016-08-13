@@ -2,6 +2,7 @@ package xyz.gangle.bleconnector.presentation.fragments;
 
 import android.os.Bundle;
 import android.text.InputFilter;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,16 +11,20 @@ import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import org.greenrobot.eventbus.EventBus;
+import org.w3c.dom.Text;
+
 import butterknife.BindView;
 import butterknife.OnCheckedChanged;
 import xyz.gangle.bleconnector.R;
+import xyz.gangle.bleconnector.events.FilterChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.customviews.MacAddressTextWatcher;
 
 
 public class ScanFilterFragment extends BaseFragment {
 
-    private static final String MAC_ADDRES_RET = "^([0-9a-fA-F]{2})(([/\\s:-][0-9a-fA-F]{2}){5})$";
+    private static final String MAC_ADDRESS_RET = "^([0-9a-fA-F]{2})(([/\\s:-][0-9a-fA-F]{2}){5})$";
 
     @BindView(R.id.rl_name)
     View nameLayout;
@@ -71,16 +76,20 @@ public class ScanFilterFragment extends BaseFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        // 初始化value
         initValue();
-        updateValideStatus();
 
-        macEdit.addTextChangedListener(new MacAddressTextWatcher(macEdit, MAC_ADDRES_RET));
+        // 更新enable的状态
+        updateEnableStatus();
+
+        // 设置数据处理
+        macEdit.addTextChangedListener(new MacAddressTextWatcher(macEdit, MAC_ADDRESS_RET));
         macEdit.setFilters(new InputFilter[]{new InputFilter.AllCaps(), new InputFilter.LengthFilter(17)});
 
-        macStartEdit.addTextChangedListener(new MacAddressTextWatcher(macStartEdit, MAC_ADDRES_RET));
+        macStartEdit.addTextChangedListener(new MacAddressTextWatcher(macStartEdit, MAC_ADDRESS_RET));
         macStartEdit.setFilters(new InputFilter[]{new InputFilter.AllCaps(), new InputFilter.LengthFilter(17)});
 
-        macEndEdit.addTextChangedListener(new MacAddressTextWatcher(macEndEdit, MAC_ADDRES_RET));
+        macEndEdit.addTextChangedListener(new MacAddressTextWatcher(macEndEdit, MAC_ADDRESS_RET));
         macEndEdit.setFilters(new InputFilter[]{new InputFilter.AllCaps(), new InputFilter.LengthFilter(17)});
 
         rssiSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -118,7 +127,7 @@ public class ScanFilterFragment extends BaseFragment {
     /**
      * 更新状态
      */
-    protected void updateValideStatus() {
+    protected void updateEnableStatus() {
         setParentLayoutEnableExcludeSelf(nameCkb, nameCkb.isChecked());
 
         setParentLayoutEnableExcludeSelf(macCkb, macCkb.isChecked());
@@ -155,12 +164,13 @@ public class ScanFilterFragment extends BaseFragment {
      */
     protected void storeValidFilter() {
         // name
-        SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE, nameCkb.isChecked());
-        SharedPrefManager.getInstance().setFilterName(nameEdit.getText().toString());
+        String name = nameEdit.getText().toString();
+        SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE, (TextUtils.isEmpty(name) ? false : nameCkb.isChecked()));
+        SharedPrefManager.getInstance().setFilterName(name);
 
         // mac address
         String macAddress = macEdit.getText().toString();
-        if (macAddress.matches(MAC_ADDRES_RET)) {
+        if (macAddress.matches(MAC_ADDRESS_RET)) {
             SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE, macCkb.isChecked());
             SharedPrefManager.getInstance().setFilterMac(macAddress);
         } else {
@@ -170,8 +180,8 @@ public class ScanFilterFragment extends BaseFragment {
 
         // mac address scope
         String macAddressStart = macStartEdit.getText().toString();
-        String macAddressEnd = macStartEdit.getText().toString();
-        if ((macAddressStart.matches(MAC_ADDRES_RET) && macAddressEnd.matches(MAC_ADDRES_RET))) {
+        String macAddressEnd = macEndEdit.getText().toString();
+        if ((macAddressStart.matches(MAC_ADDRESS_RET) && macAddressEnd.matches(MAC_ADDRESS_RET))) {
             SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE, macScopeCkb.isChecked());
             SharedPrefManager.getInstance().setFilterMacStart(macAddressStart);
             SharedPrefManager.getInstance().setFilterMacEnd(macAddressEnd);
@@ -184,6 +194,8 @@ public class ScanFilterFragment extends BaseFragment {
         // seek bar
         SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE, rssiCkb.isChecked());
         SharedPrefManager.getInstance().setFilterRssi(rssiSeekbar.getProgress());
+
+        EventBus.getDefault().post(new FilterChangeEvent());
     }
 
     @Override
@@ -194,6 +206,6 @@ public class ScanFilterFragment extends BaseFragment {
 
     @OnCheckedChanged({R.id.checkbox_mac, R.id.checkbox_mac_scope, R.id.checkbox_name, R.id.checkbox_rssi})
     protected void onCheckBoxCheckedChanged() {
-        updateValideStatus();
+        updateEnableStatus();
     }
 }

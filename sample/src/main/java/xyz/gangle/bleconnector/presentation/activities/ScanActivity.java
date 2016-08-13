@@ -48,6 +48,8 @@ import permissions.dispatcher.RuntimePermissions;
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
 import xyz.gangle.bleconnector.data.DeviceInfo;
+import xyz.gangle.bleconnector.events.FilterChangeEvent;
+import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
 import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
@@ -108,7 +110,10 @@ public class ScanActivity extends AppCompatActivity
         recyclerView.setAdapter(new DeviceRecyclerViewAdapter(devList, this));
 
         // 创建scanner
-        scanner = new NBle.ScannerBuilder(this).setScanNames(new String[]{"iHere", "Zus", "Aio"}).build();
+        scanner = new NBle.ScannerBuilder(this).setNameIgnoreCase(true).build();
+
+        // 设置filter
+        updateFilter();
 
         // 添加已维护的设备列表
         addMaintainDevicesInfo();
@@ -205,11 +210,11 @@ public class ScanActivity extends AppCompatActivity
                 final DeviceInfo newDevice = new DeviceInfo(address, name, rssi, DeviceInfo.DISCONNECTED);
                 addDeviceInfo(newDevice);
             } else {
-
+                // Found it, update info!
                 info.setRssi(rssi);
                 info.setName(name);
                 info.setStatus(DeviceInfo.DISCONNECTED);
-                ;
+
                 recyclerView.getAdapter().notifyItemChanged(devList.indexOf(info));
             }
         }
@@ -428,6 +433,40 @@ public class ScanActivity extends AppCompatActivity
             menu.add(0, MENU_ITEM_DISCONNECT, 0, "Disconnect");
         }
 
+    }
+
+
+    @Subscribe
+    public void onFilterChange(FilterChangeEvent event) {
+        updateFilter();
+    }
+
+    /**
+     * 更新filter
+     */
+    protected void updateFilter() {
+        if (scanner != null) {
+            // name filter
+            String name = SharedPrefManager.getInstance().getFilterName();
+            scanner.setScanName(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE) ? name : null);
+
+            // mac filter
+            String mac = SharedPrefManager.getInstance().getFilterMac();
+            scanner.setMac(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE) ? mac : null);
+
+            // mac range filter
+            String start = SharedPrefManager.getInstance().getFilterMacStart();
+            String end = SharedPrefManager.getInstance().getFilterMacEnd();
+            if (SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE)) {
+                scanner.setMacRange(start, end);
+            } else {
+                scanner.setMacRange(null, null);
+            }
+
+            // rssi filter
+            int rssi = -SharedPrefManager.getInstance().getFilterRssi();
+            scanner.setRssiLimit(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE) ? rssi : null);
+        }
     }
 
     @Override
