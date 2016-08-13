@@ -200,7 +200,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 直接连接设备
      */
     public boolean connectDirectly(NBleDevice bleDevice) {
-        return ((NBleDeviceImpl) bleDevice).connect(false);
+        return ((NBleDeviceImpl) bleDevice).connectImpl(false);
     }
 
     /**

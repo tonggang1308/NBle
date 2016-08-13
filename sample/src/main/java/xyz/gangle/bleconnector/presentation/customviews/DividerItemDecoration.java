@@ -1,4 +1,4 @@
-package xyz.gangle.bleconnector.presentation;
+package xyz.gangle.bleconnector.presentation.customviews;
 
 import android.content.res.TypedArray;
 import android.graphics.Canvas;

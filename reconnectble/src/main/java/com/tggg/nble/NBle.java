@@ -40,12 +40,6 @@ public final class NBle {
             nBleScanner = new NBleScannerImpl(context);
         }
 
-        public ScannerBuilder setPeriod(long period) {
-            nBleScanner.setPeriod(period);
-            return this;
-        }
-
-
         public ScannerBuilder setUuids(UUID[] uuids) {
             nBleScanner.setUuids(uuids);
             return this;
@@ -56,8 +50,29 @@ public final class NBle {
             return this;
         }
 
+        public ScannerBuilder setRssiLimit(int rssi) {
+            nBleScanner.setRssiLimit(rssi);
+            return this;
+        }
+
+        public ScannerBuilder setMac(String mac) {
+            nBleScanner.setMac(mac);
+            return this;
+        }
+
+        public ScannerBuilder setMacRange(String start, String end) {
+            nBleScanner.setMacRange(start, end);
+            return this;
+        }
+
         public ScannerBuilder setScanNames(String[] scanNames) {
             nBleScanner.setScanNames(scanNames);
+            return this;
+        }
+
+
+        public ScannerBuilder setNameIgnoreCase(boolean ignoreCase) {
+            nBleScanner.setNameCaseIgnore(ignoreCase);
             return this;
         }
 

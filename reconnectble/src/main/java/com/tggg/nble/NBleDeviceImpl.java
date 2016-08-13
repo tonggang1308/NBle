@@ -227,6 +227,13 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     /**
+     * 是否已连接
+     */
+    public boolean isConnected() {
+        return getConnectionState() == BluetoothProfile.STATE_CONNECTED;
+    }
+
+    /**
      * 获取当前设备的连接状态
      */
     public synchronized int getConnectionState() {
@@ -282,7 +289,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     /**
      * Connect to the device directly
      */
-    @Override
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
         return getManager().connectDirectly(this);
@@ -294,7 +300,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      * @param autoConnect， 表示是否是直连，还是auto连接。
      * @return
      */
-    public synchronized boolean connect(boolean autoConnect) {
+    public synchronized boolean connectImpl(boolean autoConnect) {
 
         if (bluetoothAdapter == null) {
             bluetoothAdapter = ((BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
@@ -311,7 +317,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         int state = getConnectionState();
         if (state != BluetoothProfile.STATE_DISCONNECTED || isConnecting) {
-            Timber.w("Current state is %s, so cannot do connect operation. isConnecting: %b", state, isConnecting);
+            Timber.w("Current state is %s, so cannot do connectImpl operation. isConnecting: %b", state, isConnecting);
             return false;
         }
 
@@ -324,7 +330,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         recordStatus(StatusChangeRecord.CONNECT);
         if (iBleNotifyFunction != null) {
-            iBleNotifyFunction.onConnecting(context, getAddress());
+            iBleNotifyFunction.onConnectStart(context, getAddress());
         }
 
         bleGatt = bluetoothDevice.connectGatt(context, autoConnect, gattCallBack);
@@ -332,7 +338,16 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         if (bleGatt == null) {
             isConnecting = false;
             recordStatus(StatusChangeRecord.CONNECTED_ERROR);
+
+            // onConnectFinish 是根据bleGatt来判定是否要调用。
+            if (iBleNotifyFunction != null) {
+                iBleNotifyFunction.onConnectFinish(context, getAddress());
+            }
             return false;
+        } else {
+            if (iBleNotifyFunction != null) {
+                iBleNotifyFunction.onConnecting(context, getAddress());
+            }
         }
 
         Timber.d("connecting address");
@@ -368,8 +383,9 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             bleGatt.close();
             bleGatt = null;
             recordStatus(StatusChangeRecord.CLOSE);
+
             if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onClose(context, getAddress());
+                iBleNotifyFunction.onConnectFinish(context, getAddress());
             }
         }
     }
@@ -424,22 +440,22 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         recordStatus(StatusChangeRecord.DISCONNECTED);
 
                         if (iBleNotifyFunction != null) {
-                            iBleNotifyFunction.onDisConnected(context, gatt.getDevice().getAddress());
+                            iBleNotifyFunction.onDisconnected(context, gatt.getDevice().getAddress());
                         }
 
                         if (bluetoothAdapter.isEnabled() && getManager().isMaintain(address)) {
                             Timber.d("Device " + address + " is in maintain list");
                             if (status == BluetoothGatt.GATT_SUCCESS) {
-                                Timber.i(address + " gatt.connect()");
+                                Timber.i(address + " gatt.connectImpl()");
                                 if (gatt.connect()) {
-                                    Timber.d("When get STATE_DISCONNECTED, gatt.connect() return TRUE! address:%s", address);
+                                    Timber.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
                                     isConnecting = true;
                                     recordStatus(StatusChangeRecord.AUTOCONNECT);
                                     if (iBleNotifyFunction != null) {
                                         iBleNotifyFunction.onConnecting(context, gatt.getDevice().getAddress());
                                     }
                                 } else {
-                                    Timber.w("When get STATE_DISCONNECTED, gatt.connect() return FALSE! address:%s", address);
+                                    Timber.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
                                     recordStatus(StatusChangeRecord.AUTOCONNECT_FAIL);
                                     throw new ConnectException();
                                 }

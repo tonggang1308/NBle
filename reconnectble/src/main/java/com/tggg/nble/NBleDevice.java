@@ -60,6 +60,11 @@ public interface NBleDevice {
     int getConnectionState();
 
     /**
+     * 是否已连接
+     */
+    boolean isConnected();
+
+    /**
      * 断开连接。
      */
     void disconnect();

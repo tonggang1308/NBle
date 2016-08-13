@@ -1,4 +1,4 @@
-package xyz.gangle.bleconnector.presentation;
+package xyz.gangle.bleconnector.presentation.adapters;
 
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
@@ -14,6 +14,8 @@ import java.util.List;
 
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
+import xyz.gangle.bleconnector.data.DeviceInfo;
+import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 
 public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecyclerViewAdapter.ViewHolder> {
 
@@ -35,21 +37,21 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.mItem = mValues.get(position);
-        holder.textViewName.setText((holder.mItem.name == null || holder.mItem.name.isEmpty()) ? "Unknow Device" : holder.mItem.name);
-        holder.textViewAddress.setText(holder.mItem.address);
+        holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "Unknow Device" : holder.mItem.getName());
+        holder.textViewAddress.setText(holder.mItem.getAddress());
         holder.textViewRssi.setText(holder.mItem.getRssiString());
-        if (holder.mItem.status == DeviceInfo.DISCONNECTED) {
+        if (holder.mItem.getStatus() == DeviceInfo.DISCONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
-        } else if (holder.mItem.status == DeviceInfo.CONNECTING) {
+        } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTING) {
             holder.textViewState.setTextColor(Color.GRAY);
-        } else if (holder.mItem.status == DeviceInfo.CONNECTED) {
+        } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#99cc33"));
-        } else if (holder.mItem.status == DeviceInfo.CLOSE) {
+        } else if (holder.mItem.getStatus() == DeviceInfo.CLOSE) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
         }
         holder.textViewState.setText(holder.mItem.getStatusString());
 
-        boolean isMaintain = NBle.getManager().isMaintain(holder.mItem.address);
+        boolean isMaintain = NBle.getManager().isMaintain(holder.mItem.getAddress());
         holder.viewMaintain.setVisibility(isMaintain ? View.VISIBLE : View.GONE);
 
         holder.mView.setTag(holder.mItem);

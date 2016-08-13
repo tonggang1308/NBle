@@ -1,7 +1,5 @@
-package xyz.gangle.bleconnector.presentation;
+package xyz.gangle.bleconnector.data;
 
-
-import android.graphics.Color;
 
 public class DeviceInfo {
 
@@ -10,6 +8,12 @@ public class DeviceInfo {
     public static final int CONNECTING = 2;
     public static final int CLOSE = 3;
 
+    private String address;
+    private String name;
+    private Integer rssi;
+    private int status;
+
+
     public DeviceInfo(String address, String name, Integer rssi, int status) {
         this.address = address;
         this.name = name;
@@ -17,10 +21,33 @@ public class DeviceInfo {
         this.status = status;
     }
 
-    String address;
-    String name;
-    Integer rssi;
-    int status;
+    public String getAddress() {
+        return address;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getRssi() {
+        return rssi;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setRssi(Integer rssi) {
+        this.rssi = rssi;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
 
     public String getRssiString() {
         return rssi == null ? "---" : String.format("%ddb", rssi);

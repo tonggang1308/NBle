@@ -8,10 +8,7 @@ import com.tggg.nble.NBle;
 import timber.log.Timber;
 import xyz.gangle.bleconnector.BuildConfig;
 import xyz.gangle.bleconnector.data.BaseBleNotifyFunction;
-
-/**
- * Created by yiyidu on 5/28/16.
- */
+import xyz.gangle.bleconnector.preference.SharedPrefManager;
 
 public class ConnectorApplication extends Application {
 
@@ -34,6 +31,8 @@ public class ConnectorApplication extends Application {
         // 注册响应
         NBle.getManager().registerDefaultNotification(new BaseBleNotifyFunction());
 
+        // 初始化存储
+        SharedPrefManager.getInstance().init(this);
 
 
     }

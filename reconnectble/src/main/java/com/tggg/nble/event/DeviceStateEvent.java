@@ -9,12 +9,15 @@ public class DeviceStateEvent {
     public static final int NOTIFY = 0x0001;
     public static final int ONREAD = 0x0002;
     public static final int ONWRITE = 0x0003;
-    public static final int CONNECTED = 0x0004;
-    public static final int DISCONNECTED = 0x005;
-    public static final int DISCOVERED = 0x006;
-    public static final int CONNECTING = 0x007;
-    public static final int CLOSE = 0x008;
-    public static final int RSSI = 0x009;
+    public static final int RSSI = 0x04;
+
+    public static final int CONNECT_START = 0x0010;
+    public static final int CONNECTING = 0x0011;
+    public static final int CONNECTED = 0x0012;
+    public static final int DISCONNECTED = 0x0013;
+    public static final int CONNECT_FINISH = 0x0014;
+
+    public static final int DISCOVERED = 0x020;
 
     public final int type;
     public final String address;
@@ -56,20 +59,23 @@ public class DeviceStateEvent {
             case ONWRITE:
                 return "ON_WRITE";
 
+            case CONNECT_START:
+                return "CONNECT_START";
+
             case CONNECTED:
                 return "CONNECTED";
 
             case DISCONNECTED:
                 return "DISCONNECTED";
 
+            case CONNECT_FINISH:
+                return "CONNECT_FINISH";
+
             case DISCOVERED:
                 return "DISCOVERED";
 
             case CONNECTING:
                 return "CONNECTING";
-
-            case CLOSE:
-                return "CLOSE";
 
             case RSSI:
                 return "RSSI";
