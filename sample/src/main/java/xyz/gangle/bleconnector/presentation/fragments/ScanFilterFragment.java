@@ -110,6 +110,7 @@ public class ScanFilterFragment extends BaseFragment {
             }
         });
 
+
     }
 
     protected void setParentLayoutEnableExcludeSelf(View v, boolean enable) {

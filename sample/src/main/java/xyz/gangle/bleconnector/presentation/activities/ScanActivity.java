@@ -11,6 +11,7 @@ import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -67,6 +68,9 @@ public class ScanActivity extends AppCompatActivity
     private final static int MENU_ITEM_CONNECT = 3;
     private final static int MENU_ITEM_DISCONNECT = 4;
 
+    @BindView(R.id.swipeRefreshLayout)
+    SwipeRefreshLayout swipeRefreshLayout;
+
     @BindView(R.id.listView)
     RecyclerView recyclerView;
 
@@ -85,14 +89,14 @@ public class ScanActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Action", null).show();
-            }
-        });
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_INDEFINITE)
+//                        .setAction("Action", null).show();
+//            }
+//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -122,6 +126,14 @@ public class ScanActivity extends AppCompatActivity
             @Override
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
 
+            }
+        });
+
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                ScanActivityPermissionsDispatcher.onScanStartWithCheck(ScanActivity.this);
             }
         });
     }
@@ -167,9 +179,15 @@ public class ScanActivity extends AppCompatActivity
     @NeedsPermission({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
     public void onScanStart() {
         if (NBleUtil.isAdapterEnable(this)) {
-            scanner.start(scanListener);
+            if (!scanner.isScanning())
+                scanner.start(scanListener);
+            else {
+                Toast.makeText(this, "is Scanning!", Toast.LENGTH_SHORT).show();
+                swipeRefreshLayout.setRefreshing(false);
+            }
         } else {
             Toast.makeText(this, "Please enable bluetooth adapter!", Toast.LENGTH_SHORT).show();
+            swipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -194,6 +212,7 @@ public class ScanActivity extends AppCompatActivity
     private NBleScanner.BleScanListener scanListener = new NBleScanner.BleScanListener() {
         @Override
         public void onScanStarted() {
+            swipeRefreshLayout.setRefreshing(false);
             Timber.v("ble scan start!");
         }
 
