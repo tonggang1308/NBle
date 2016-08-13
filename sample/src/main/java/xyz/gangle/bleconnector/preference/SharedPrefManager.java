@@ -17,7 +17,7 @@ public class SharedPrefManager {
     /**
      * 扫描的时间
      */
-    public static final String KEY_SCAN_PERIOD = "KEY_SCAN_PERIOD";
+    public static final String KEY_SCAN_DURATION = "KEY_SCAN_DURATION";
 
     /**
      * filter NAME
@@ -73,12 +73,12 @@ public class SharedPrefManager {
     /**
      * 扫描时间
      */
-    public int getScanPeriod() {
-        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_PERIOD, 1);
+    public int getScanDuration() {
+        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_DURATION, 1);
     }
 
-    public void setScanPeriod(int period) {
-        PreferenceUtil.write(sharedPreferences, KEY_SCAN_PERIOD, period);
+    public void setScanDuration(int duration) {
+        PreferenceUtil.write(sharedPreferences, KEY_SCAN_DURATION, duration);
     }
 
 

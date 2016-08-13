@@ -1,10 +1,13 @@
 package com.tggg.nble;
 
 public interface NBleScanner {
+    int INDEFINITE = 0;
 
     /**
      * start to scan
      */
+    boolean start(BleScanListener callback, int duration);
+
     boolean start(BleScanListener callback);
 
     /**

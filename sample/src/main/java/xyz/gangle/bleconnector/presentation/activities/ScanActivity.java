@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
@@ -39,6 +39,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -48,13 +50,15 @@ import permissions.dispatcher.PermissionRequest;
 import permissions.dispatcher.RuntimePermissions;
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
+import xyz.gangle.bleconnector.data.ConstData;
 import xyz.gangle.bleconnector.data.DeviceInfo;
 import xyz.gangle.bleconnector.events.FilterChangeEvent;
+import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
 import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
-import xyz.gangle.bleconnector.presentation.fragments.ScanPeriodFragment;
+import xyz.gangle.bleconnector.presentation.fragments.ScanDurationFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
 
@@ -68,6 +72,9 @@ public class ScanActivity extends AppCompatActivity
     private final static int MENU_ITEM_CONNECT = 3;
     private final static int MENU_ITEM_DISCONNECT = 4;
 
+    @BindView(R.id.content_scan)
+    ConstraintLayout constraintLayout;
+
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout swipeRefreshLayout;
 
@@ -78,7 +85,12 @@ public class ScanActivity extends AppCompatActivity
 
     private List<DeviceInfo> devList = Collections.synchronizedList(new ArrayList<DeviceInfo>());
     private NBleScanner scanner;
+    private int scanDuration = NBleScanner.INDEFINITE;
     private RssiComparator comparator = new RssiComparator();
+    private Snackbar snackbar;
+    private Timer countDownTimer;
+    private long startScanTime;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,15 +100,6 @@ public class ScanActivity extends AppCompatActivity
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_INDEFINITE)
-//                        .setAction("Action", null).show();
-//            }
-//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -108,6 +111,7 @@ public class ScanActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
 
+        // 初始化recyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
@@ -116,8 +120,11 @@ public class ScanActivity extends AppCompatActivity
         // 创建scanner
         scanner = new NBle.ScannerBuilder(this).setNameIgnoreCase(true).build();
 
-        // 设置filter
+        // 设置 scan filter
         updateFilter();
+
+        // 设置 scan duration
+        updateDuration();
 
         // 添加已维护的设备列表
         addMaintainDevicesInfo();
@@ -129,6 +136,7 @@ public class ScanActivity extends AppCompatActivity
             }
         });
 
+        // 下拉效果
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -180,9 +188,8 @@ public class ScanActivity extends AppCompatActivity
     public void onScanStart() {
         if (NBleUtil.isAdapterEnable(this)) {
             if (!scanner.isScanning())
-                scanner.start(scanListener);
+                scanner.start(scanListener, scanDuration);
             else {
-                Toast.makeText(this, "is Scanning!", Toast.LENGTH_SHORT).show();
                 swipeRefreshLayout.setRefreshing(false);
             }
         } else {
@@ -209,16 +216,63 @@ public class ScanActivity extends AppCompatActivity
 
     }
 
+
     private NBleScanner.BleScanListener scanListener = new NBleScanner.BleScanListener() {
         @Override
         public void onScanStarted() {
-            swipeRefreshLayout.setRefreshing(false);
             Timber.v("ble scan start!");
+            // 关闭下拉
+            swipeRefreshLayout.setRefreshing(false);
+
+            // 弹出提示栏
+            if (snackbar == null) {
+                snackbar = Snackbar.make(constraintLayout, "Scanning", Snackbar.LENGTH_INDEFINITE);
+                snackbar.setAction("Stop", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        snackbar.dismiss();
+                        scanner.stop();
+                    }
+                });
+            }
+            snackbar.show();
+
+            // 在弹出栏上显示倒计时
+            countDownTimer = new Timer();
+            startScanTime = System.currentTimeMillis();
+            countDownTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if (snackbar.isShown()) {
+                        if (scanDuration != NBleScanner.INDEFINITE) {
+                            long diff = System.currentTimeMillis() - startScanTime;
+                            final long left = scanDuration / 1000 - ((diff + 100) / 1000);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    snackbar.setText(String.format("SCANNING...      %s SEC", left));
+                                }
+                            });
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    snackbar.setText(String.format("SCANNING..."));
+                                }
+                            });
+                        }
+                    }
+                }
+            }, 0, 1000);
         }
 
         @Override
         public void onScanStopped() {
             Timber.v("ble scan stopped");
+            if (snackbar != null && snackbar.isShown()) {
+                snackbar.dismiss();
+            }
+            countDownTimer.cancel();
         }
 
         @Override
@@ -272,12 +326,13 @@ public class ScanActivity extends AppCompatActivity
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.clear();
-        if (scanner.isScanning())
-            menu.add(0, R.id.scan_stop, 1, "Scan stop");
-        else
-            menu.add(0, R.id.scan_start, 1, "Scan start");
-        return super.onPrepareOptionsMenu(menu);
+        return false;
+//        menu.clear();
+//        if (scanner.isScanning())
+//            menu.add(0, R.id.scan_stop, 1, "Scan stop");
+//        else
+//            menu.add(0, R.id.scan_start, 1, "Scan start");
+//        return super.onPrepareOptionsMenu(menu);
 
     }
 
@@ -315,7 +370,7 @@ public class ScanActivity extends AppCompatActivity
 
         if (id == R.id.nav_scan) {
             // Handle the camera action
-            ScanSettingActivity.fragment = new ScanPeriodFragment();
+            ScanSettingActivity.fragment = new ScanDurationFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_filter) {
             ScanSettingActivity.fragment = new ScanFilterFragment();
@@ -454,10 +509,23 @@ public class ScanActivity extends AppCompatActivity
 
     }
 
+    @Subscribe
+    public void onScanDurationChange(ScanDurationChangeEvent event) {
+        updateDuration();
+    }
 
     @Subscribe
     public void onFilterChange(FilterChangeEvent event) {
         updateFilter();
+    }
+
+    protected void updateDuration() {
+        int mode = SharedPrefManager.getInstance().getScanMode();
+        if (mode == ConstData.Scan.MODE_CONTINUOUS) {
+            scanDuration = NBleScanner.INDEFINITE;
+        } else if (mode == ConstData.Scan.MODE_MANUAL) {
+            scanDuration = 1000 * SharedPrefManager.getInstance().getScanDuration();
+        }
     }
 
     /**

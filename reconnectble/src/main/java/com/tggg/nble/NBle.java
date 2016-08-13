@@ -40,11 +40,6 @@ public final class NBle {
             nBleScanner = new NBleScannerImpl(context);
         }
 
-        public ScannerBuilder setPeriod(long period) {
-            nBleScanner.setPeriod(period);
-            return this;
-        }
-
         public ScannerBuilder setUuids(UUID[] uuids) {
             nBleScanner.setUuids(uuids);
             return this;

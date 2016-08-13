@@ -32,7 +32,6 @@ class NBleScannerImpl implements NBleScanner {
     public static final int SCAN_NAME_MATCH_CONTAIN = 0x03;
 
     private Context context;
-    private long period = 0;
     private UUID[] uuids;
     private String[] namesFilter;
     private String macStartFilter;
@@ -110,11 +109,6 @@ class NBleScannerImpl implements NBleScanner {
         }
     }
 
-    public NBleScannerImpl setPeriod(long period) {
-        this.period = period;
-        return this;
-    }
-
     public UUID[] getUuids() {
         return uuids;
     }
@@ -157,11 +151,16 @@ class NBleScannerImpl implements NBleScanner {
     }
 
     public boolean start(BleScanListener callback) {
-        addressList.clear();
-        return start(uuids, callback, period);
+        return start(callback, INDEFINITE);
     }
 
-    private synchronized boolean start(UUID[] serviceUuids, BleScanListener listener, long period) {
+    @Override
+    public boolean start(BleScanListener callback, int duration) {
+        addressList.clear();
+        return start(uuids, callback, duration);
+    }
+
+    private synchronized boolean start(UUID[] serviceUuids, BleScanListener listener, long duration) {
         if (listener == null) {
             Timber.e("Null call back, refuse to scan!");
             return false;
@@ -202,9 +201,9 @@ class NBleScannerImpl implements NBleScanner {
 
             mScanning = true;
             mScanListener.onScanStarted();
-            // Stops scanning after a defined scan period.
-            if (period > 0) {
-                mHandler.postDelayed(stopRunnable, period);
+            // Stops scanning after a defined scan duration.
+            if (duration > 0) {
+                mHandler.postDelayed(stopRunnable, duration);
             }
             return true;
         }

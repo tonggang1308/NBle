@@ -3,7 +3,6 @@ package xyz.gangle.bleconnector.presentation.fragments;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,18 +11,18 @@ import android.widget.NumberPicker;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import org.greenrobot.eventbus.EventBus;
 
 import butterknife.BindView;
 import butterknife.OnClick;
 import xyz.gangle.bleconnector.R;
+import xyz.gangle.bleconnector.data.ConstData;
+import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 
 
-public class ScanPeriodFragment extends BaseFragment {
-
-    private static final int MODE_CONTINUOUS = 0;
-    private static final int MODE_MANUAL = 1;
+public class ScanDurationFragment extends BaseFragment {
 
     @BindView(R.id.tv_period)
     TextView periodTextView;
@@ -43,6 +42,7 @@ public class ScanPeriodFragment extends BaseFragment {
 //    @BindView(R.id.rl_number_picker)
 //    View numberPickerLayout;
 
+    boolean dirty = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -59,8 +59,9 @@ public class ScanPeriodFragment extends BaseFragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (buttonView.isPressed()) {
-                    SharedPrefManager.getInstance().setScanMode(isChecked ? MODE_CONTINUOUS : MODE_MANUAL);
+                    SharedPrefManager.getInstance().setScanMode(isChecked ? ConstData.Scan.MODE_CONTINUOUS : ConstData.Scan.MODE_MANUAL);
                     updateStatus();
+                    dirty = true;
                 } else {
 //                    Toast.makeText(getActivity(), "code checked change", Toast.LENGTH_SHORT).show();
                 }
@@ -70,8 +71,8 @@ public class ScanPeriodFragment extends BaseFragment {
 
     protected void updateStatus() {
         int mode = SharedPrefManager.getInstance().getScanMode();
-        int period = SharedPrefManager.getInstance().getScanPeriod();
-        if (mode == MODE_CONTINUOUS) {
+        int period = SharedPrefManager.getInstance().getScanDuration();
+        if (mode == ConstData.Scan.MODE_CONTINUOUS) {
             manualLayout.setEnabled(false);
             manualTextView.setEnabled(false);
             continuousTextView.setEnabled(true);
@@ -89,7 +90,7 @@ public class ScanPeriodFragment extends BaseFragment {
 
     @OnClick(R.id.rl_manual)
     protected void onManualClick() {
-        int period = SharedPrefManager.getInstance().getScanPeriod();
+        int period = SharedPrefManager.getInstance().getScanDuration();
         RelativeLayout linearLayout = new RelativeLayout(getActivity());
         final NumberPicker aNumberPicker = new NumberPicker(getActivity());
         aNumberPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
@@ -112,8 +113,9 @@ public class ScanPeriodFragment extends BaseFragment {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 int sec = aNumberPicker.getValue();
-                                SharedPrefManager.getInstance().setScanPeriod(sec);
+                                SharedPrefManager.getInstance().setScanDuration(sec);
                                 updateStatus();
+                                dirty = true;
                             }
                         })
                 .setNegativeButton("Cancel",
@@ -126,4 +128,11 @@ public class ScanPeriodFragment extends BaseFragment {
         alertDialog.show();
     }
 
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (dirty)
+            EventBus.getDefault().post(new ScanDurationChangeEvent());
+    }
 }
