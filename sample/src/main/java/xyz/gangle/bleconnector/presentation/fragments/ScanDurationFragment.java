@@ -53,6 +53,8 @@ public class ScanDurationFragment extends BaseFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        getActivity().setTitle(R.string.setting_scan);
+
         updateStatus();
 
         continuousSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {

@@ -76,6 +76,9 @@ public class ScanFilterFragment extends BaseFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        getActivity().setTitle(R.string.setting_filter);
+
         // 初始化value
         initValue();
 

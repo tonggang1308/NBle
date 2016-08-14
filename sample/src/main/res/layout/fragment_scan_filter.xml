@@ -13,14 +13,14 @@
             android:id="@+id/rl_name"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:text="BY NAME"
                 android:textColor="@color/setting_item_title_text_color"
                 android:textStyle="bold" />
@@ -30,7 +30,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:background="@null"
                 android:hint="Name"
                 android:maxLength="@integer/name_text_max"
@@ -55,14 +55,14 @@
             android:id="@+id/rl_mac"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:text="BY MAC ADDRESS"
                 android:textColor="@color/setting_item_title_text_color"
                 android:textStyle="bold" />
@@ -72,7 +72,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:background="@null"
                 android:digits="@string/mac_address_regx"
                 android:hint="AA:BB:CC:DD:EE:FF"
@@ -97,14 +97,14 @@
             android:id="@+id/rl_mac_scope"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:text="BY MAC ADDRESS SCOPE"
                 android:textColor="@color/setting_item_title_text_color"
                 android:textStyle="bold" />
@@ -114,7 +114,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:background="@null"
                 android:digits="@string/mac_address_regx"
                 android:gravity="center_horizontal"
@@ -128,8 +128,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignBaseline="@id/et_mac_start"
-                android:layout_marginLeft="@dimen/margin_small"
-                android:layout_marginRight="@dimen/margin_small"
+                android:layout_marginLeft="@dimen/size_small"
+                android:layout_marginRight="@dimen/size_small"
                 android:layout_toRightOf="@id/et_mac_start"
                 android:text="-" />
 
@@ -139,7 +139,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignBaseline="@id/et_mac_start"
                 android:layout_below="@id/tv_title"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:layout_toRightOf="@id/tv"
                 android:background="@null"
                 android:digits="@string/mac_address_regx"
@@ -166,14 +166,14 @@
             android:id="@+id/rl_rssi"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:text="BY RSSI"
                 android:textColor="@color/setting_item_title_text_color"
                 android:textStyle="bold" />
@@ -183,7 +183,7 @@
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
-                android:layout_marginTop="@dimen/margin_big"
+                android:layout_marginTop="@dimen/size_big"
                 android:background="@null"
                 android:text="-99 dBm" />
 
@@ -192,7 +192,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignTop="@+id/tv_rssi"
-                android:layout_marginRight="@dimen/margin_big"
+                android:layout_marginRight="@dimen/size_big"
                 android:layout_toLeftOf="@+id/checkbox_rssi"
                 android:layout_toRightOf="@+id/tv_rssi" />
 

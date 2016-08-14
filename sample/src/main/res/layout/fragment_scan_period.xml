@@ -13,8 +13,8 @@
             android:id="@+id/rl_continuous"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_continuous"
@@ -35,15 +35,15 @@
             android:id="@+id/rl_manual"
             android:layout_width="match_parent"
             android:layout_height="@dimen/setting_item_height"
-            android:paddingLeft="@dimen/margin_big"
-            android:paddingRight="@dimen/margin_big">
+            android:paddingLeft="@dimen/size_big"
+            android:paddingRight="@dimen/size_big">
 
             <TextView
                 android:id="@+id/tv_manual"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:text="Maunal Scan" />
+                android:text="Manual Scan" />
 
             <TextView
                 android:id="@+id/tv_period"

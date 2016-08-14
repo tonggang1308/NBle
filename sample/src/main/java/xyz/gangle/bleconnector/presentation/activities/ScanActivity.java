@@ -57,6 +57,7 @@ import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
+import xyz.gangle.bleconnector.presentation.fragments.DeviceInfoFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanDurationFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
@@ -378,7 +379,8 @@ public class ScanActivity extends AppCompatActivity
         } else if (id == R.id.nav_sort) {
 
         } else if (id == R.id.nav_device_info) {
-
+            ScanSettingActivity.fragment = new DeviceInfoFragment();
+            startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_feedback) {
 
         } else if (id == R.id.nav_faq) {

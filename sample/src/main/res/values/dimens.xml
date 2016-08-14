@@ -5,17 +5,27 @@
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
+
+
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
 
     <dimen name="setting_item_height">48dp</dimen>
     <dimen name="setting_filter_item_height">86dp</dimen>
-    <dimen name="margin_tiny">2dp</dimen>
-    <dimen name="margin_small">4dp</dimen>
-    <dimen name="margin_normal">8dp</dimen>
-    <dimen name="margin_big">16dp</dimen>
-    <dimen name="margin_huge">32dp</dimen>
-    <dimen name="margin_very_huge">64dp</dimen>
+
+    <!--base text size-->
+    <dimen name="text_huge_size">22sp</dimen>
+    <dimen name="text_big_size">18sp</dimen>
+    <dimen name="text_normal_size">12sp</dimen>
+
+    <!--base size-->
+    <dimen name="size_tiny">2dp</dimen>
+    <dimen name="size_small">4dp</dimen>
+    <dimen name="size_normal">10dp</dimen>
+    <dimen name="size_big">16dp</dimen>
+    <dimen name="size_huge">24dp</dimen>
+    <dimen name="size_very_huge">32dp</dimen>
+    <dimen name="size_very_very_huge">64dp</dimen>
 
     <integer name="mac_text_max">17</integer>
     <integer name="name_text_max">20</integer>
