@@ -20,9 +20,7 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".presentation.activities.ScanSettingActivity"
-            android:label="@string/setting_scan" />
+        <activity android:name=".presentation.activities.ScanSettingActivity" />
 
         <service android:name="com.tggg.nble.NBleService" />
 
