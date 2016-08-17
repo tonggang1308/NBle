@@ -1,11 +1,12 @@
 package xyz.gangle.bleconnector.presentation.activities;
 
 import android.Manifest;
-import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothProfile;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -13,6 +14,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -184,17 +186,61 @@ public class ScanActivity extends AppCompatActivity
 //        onScanStart();
     }
 
+    /**
+     * 判断开启蓝牙扫描的前提条件是否满足
+     * 1，开启GPS定位，2，开启蓝牙功能
+     */
+    protected boolean checkConditions() {
+        if (!CommonUtil.isGPSEnable(this)) {
+            new android.support.v7.app.AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setMessage(R.string.hint_turn_on_gps)
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    }).create().show();
+            return false;
+        } else if (!NBleUtil.isAdapterEnable(this)) {
+            new AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setMessage(R.string.hint_turn_on_bluetooth)
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                            startActivityForResult(enableBtIntent, 1);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    }).create().show();
+
+            return false;
+        }
+        return true;
+    }
 
     @NeedsPermission({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
     public void onScanStart() {
-        if (NBleUtil.isAdapterEnable(this)) {
+        if (checkConditions()) {
             if (!scanner.isScanning())
                 scanner.start(scanListener, scanDuration);
             else {
                 swipeRefreshLayout.setRefreshing(false);
             }
         } else {
-            Toast.makeText(this, "Please enable bluetooth adapter!", Toast.LENGTH_SHORT).show();
             swipeRefreshLayout.setRefreshing(false);
         }
     }

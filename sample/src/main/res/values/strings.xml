@@ -17,6 +17,9 @@
 
     <string name="mac_address_regx">0123456789abcdefABCDEF:</string>
 
+    <string name="hint_turn_on_bluetooth">Please turn on BLUETOOTH to scan the nearby BLE devices.</string>
+    <string name="hint_turn_on_gps">Please turn on LOCATION SERVICE to find the nearby BLE devices.</string>
+
     <string name="apply">Apply</string>
 
 </resources>
