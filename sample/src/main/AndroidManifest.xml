@@ -37,7 +37,23 @@
         </receiver>
 
 
+
+        <!-- LeanCloud 反馈组件（若使用该功能，需添加以下声明）START -->
+        <activity
+            android:name=".presentation.activities.FeedbackThreadActivity" >
+        </activity>
+        <!-- 反馈组件 END -->
     </application>
+
+
+    <!-- LeanCloud 基础模块（必须加入以下声明）START -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- 基础模块 END -->
 
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
