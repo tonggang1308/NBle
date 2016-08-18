@@ -27,12 +27,15 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.avos.avoscloud.feedback.FeedbackAgent;
+import com.avos.avoscloud.feedback.ThreadActivity;
 import com.tggg.nble.NBleUtil;
 import com.tggg.nble.DeviceStateEvent;
 import com.tggg.nble.NBle;
 import com.tggg.nble.NBleDevice;
 import com.tggg.nble.NBleScanner;
 import com.tggg.util.CommonUtil;
+import com.tggg.util.DeviceUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -93,7 +96,7 @@ public class ScanActivity extends AppCompatActivity
     private Snackbar snackbar;
     private Timer countDownTimer;
     private long startScanTime;
-
+    FeedbackAgent agent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +150,12 @@ public class ScanActivity extends AppCompatActivity
                 ScanActivityPermissionsDispatcher.onScanStartWithCheck(ScanActivity.this);
             }
         });
+
+        navigationView.getMenu().findItem(R.id.nav_about).setTitle(DeviceUtil.getAppVersion(ScanActivity.this));
+
+        // LeanCloud 反馈初始化
+        agent = new FeedbackAgent(this);
+        agent.sync();
     }
 
 
@@ -428,7 +437,9 @@ public class ScanActivity extends AppCompatActivity
             ScanSettingActivity.fragment = new DeviceInfoFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_feedback) {
-
+            Intent intent = new Intent(this, FeedbackThreadActivity.class);
+            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+            startActivity(intent);
         } else if (id == R.id.nav_faq) {
 
         } else if (id == R.id.nav_help) {
@@ -441,6 +452,24 @@ public class ScanActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+//    @OnShowRationale({Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE})
+//    void showRationaleForFeedback(final PermissionRequest request) {
+//        new AlertDialog.Builder(this)
+//                .setMessage("Could you allow External storage access?")
+//                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        request.proceed();
+//                    }
+//                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                request.cancel();
+//            }
+//        }).show();
+//
+//    }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
