@@ -35,6 +35,7 @@ import com.tggg.nble.NBle;
 import com.tggg.nble.NBleDevice;
 import com.tggg.nble.NBleScanner;
 import com.tggg.util.CommonUtil;
+import com.tggg.util.DeviceUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -150,6 +151,7 @@ public class ScanActivity extends AppCompatActivity
             }
         });
 
+        navigationView.getMenu().findItem(R.id.nav_about).setTitle(DeviceUtil.getAppVersion(ScanActivity.this));
 
         // LeanCloud 反馈初始化
         agent = new FeedbackAgent(this);
