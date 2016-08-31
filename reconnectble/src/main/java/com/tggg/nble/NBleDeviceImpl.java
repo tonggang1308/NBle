@@ -11,8 +11,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
 import com.tggg.nble.Record.StatusChangeRecord;
 import com.tggg.nble.device.DeviceBase;
 import com.tggg.nble.ifunction.IBleNotifyFunction;
@@ -31,12 +30,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     public static UUID SERVICES_DEVICE_INFO_UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb");
     public static UUID CHARACTERISTICS_SOFTWARE_UUID = UUID.fromString("00002a28-0000-1000-8000-00805f9b34fb");
 
-    /**
-     * 序列化字段
-     */
-    public static final String SERIALIZE_ADDRESS = "address";
-    public static final String SERIALIZE_NAME = "name";
-    public static final String SERIALIZE_MAINTAIN = "maintain";
 
     /**
      * Enable Notification的UUID
@@ -356,21 +349,14 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
     @Override
     public String serialize() {
-        JSONObject object = new JSONObject();
-        object.put(SERIALIZE_ADDRESS, getAddress());
-        object.put(SERIALIZE_NAME, getName());
-        object.put(SERIALIZE_MAINTAIN, isMaintain());
-        return object.toJSONString();
+        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), isMaintain()));
     }
 
     static public NBleDeviceImpl deserialize(Context context, String json) {
-        JSONObject object = JSON.parseObject(json);
-        String address = object.getString(SERIALIZE_ADDRESS);
-        String name = object.getString(SERIALIZE_NAME);
-        Boolean maintain = object.getBoolean(SERIALIZE_MAINTAIN);
-        NBleDeviceImpl device = new NBleDeviceImpl(context, address, name);
-        if (maintain != null)
-            device.setMaintain(maintain);
+        SerializeBleDeviceInfo deviceInfo = new Gson().fromJson(json, SerializeBleDeviceInfo.class);
+        NBleDeviceImpl device = new NBleDeviceImpl(context, deviceInfo.address, deviceInfo.name);
+        if (deviceInfo.maintain != null)
+            device.setMaintain(deviceInfo.maintain);
         return device;
     }
 
@@ -564,6 +550,20 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         }
     };
 
+    private class SerializeBleDeviceInfo {
+        /**
+         * 序列化字段
+         */
+        public String address;
+        public String name;
+        public Boolean maintain;
+
+        public SerializeBleDeviceInfo(String address, String name, boolean maintain) {
+            this.address = address;
+            this.name = name;
+            this.maintain = maintain;
+        }
+    }
 
     private class ConnectException extends Exception {
     }

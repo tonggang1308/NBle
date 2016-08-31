@@ -44,7 +44,6 @@ public class NBleService extends Service {
         Timber.i("onCreate, first start NBleService");
 
         // 第一次启动，恢复‘维护设备列表’。
-        NBleDeviceManagerImpl.getInstance().restoreDevices(this);
         if (NBleUtil.isAdapterEnable(this)) {
             // 重新连接‘需要维护的设备’
             reconnectAll();
