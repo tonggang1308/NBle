@@ -185,18 +185,18 @@ public class DeviceInfoFragment extends BaseFragment {
     protected String getDpi() {
         int density = getResources().getDisplayMetrics().densityDpi;
 
-        if (density >= DisplayMetrics.DENSITY_XXXHIGH)
-            return "xxxhdpi";
-        else if (density >= DisplayMetrics.DENSITY_XXHIGH)
-            return "xxhdpi";
-        else if (density >= DisplayMetrics.DENSITY_XHIGH)
-            return "xhdpi";
-        else if (density >= DisplayMetrics.DENSITY_HIGH)
-            return "hdpi";
-        else if (density >= DisplayMetrics.DENSITY_MEDIUM)
-            return "mdpi";
-        else if (density >= DisplayMetrics.DENSITY_LOW)
+        if (density <= DisplayMetrics.DENSITY_LOW)
             return "ldpi";
+        else if (density <= DisplayMetrics.DENSITY_MEDIUM)
+            return "mdpi";
+        else if (density <= DisplayMetrics.DENSITY_HIGH)
+            return "hdpi";
+        else if (density <= DisplayMetrics.DENSITY_XHIGH)
+            return "xhdpi";
+        else if (density <= DisplayMetrics.DENSITY_XXHIGH)
+            return "xxhdpi";
+        else if (density <= DisplayMetrics.DENSITY_XXXHIGH)
+            return "xxxhdpi";
         else
             return "unknow";
     }
