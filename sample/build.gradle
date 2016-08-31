@@ -18,7 +18,7 @@ android {
         minSdkVersion 18
         targetSdkVersion 24
         versionCode 1
-        versionName "1.0.0"
+        versionName "0.9.0"
         archivesBaseName = "BleConnector"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -63,10 +63,10 @@ dependencies {
     androidTestCompile 'com.android.support:support-annotations:24.0.0'
 
     // Timber
-    compile 'com.jakewharton.timber:timber:4.1.2'
+//    compile 'com.jakewharton.timber:timber:4.1.2'
 
     // Fast Json
-    compile 'com.alibaba:fastjson:1.2.6'
+//    compile 'com.alibaba:fastjson:1.2.6'
 
     compile 'io.reactivex:rxjava:1.1.5'
     compile 'io.reactivex:rxandroid:1.2.0'

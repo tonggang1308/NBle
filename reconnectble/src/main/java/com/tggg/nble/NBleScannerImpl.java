@@ -13,7 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.text.TextUtils;
 
-import com.alibaba.fastjson.JSONArray;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -180,7 +180,7 @@ class NBleScannerImpl implements NBleScanner {
 
         if (!mScanning) {
             if (namesFilter != null)
-                Timber.d("Scan name : " + JSONArray.toJSON(namesFilter));
+                Timber.d("Scan name : " + new Gson().toJson(namesFilter));
 
             mScanListener = listener;
 

@@ -23,14 +23,15 @@ public final class NBle {
         // BLE Share Preference
         NBlePreference.init(context);
 
-        // BLE Service
-        NBleService.start(context);
-
         // BLE Manager
         NBleDeviceManagerImpl.getInstance().init(context);
 
+        // BLE Service
+        NBleService.start(context);
+
         // Operation Manager
         OperationManager.getInstance().init(NBleDeviceManagerImpl.getInstance());
+
     }
 
     public static class ScannerBuilder {

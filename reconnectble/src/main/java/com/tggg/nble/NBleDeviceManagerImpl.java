@@ -75,6 +75,9 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     public void init(Context context) {
         this.context = context;
+
+        // 第一次启动，恢复‘维护设备列表’。
+        NBleDeviceManagerImpl.getInstance().restoreDevices(context);
     }
 
     /**
