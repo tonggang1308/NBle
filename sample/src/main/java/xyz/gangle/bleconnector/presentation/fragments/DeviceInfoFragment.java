@@ -2,7 +2,6 @@ package xyz.gangle.bleconnector.presentation.fragments;
 
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Point;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -18,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import butterknife.BindView;
-import xyz.gangle.bleconnector.BuildConfig;
 import xyz.gangle.bleconnector.R;
 
 

@@ -6,8 +6,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
 
-import timber.log.Timber;
-
 /**
  * Created by Tong Gang on 8/10/16.
  */

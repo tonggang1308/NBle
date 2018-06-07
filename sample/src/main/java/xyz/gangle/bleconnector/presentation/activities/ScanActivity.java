@@ -27,13 +27,11 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.avos.avoscloud.feedback.FeedbackAgent;
-import com.avos.avoscloud.feedback.ThreadActivity;
-import com.tggg.nble.NBleUtil;
 import com.tggg.nble.DeviceStateEvent;
 import com.tggg.nble.NBle;
 import com.tggg.nble.NBleDevice;
 import com.tggg.nble.NBleScanner;
+import com.tggg.nble.NBleUtil;
 import com.tggg.util.CommonUtil;
 import com.tggg.util.DeviceUtil;
 
@@ -61,12 +59,12 @@ import xyz.gangle.bleconnector.events.FilterChangeEvent;
 import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
+import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
 import xyz.gangle.bleconnector.presentation.fragments.DeviceInfoFragment;
-import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanDurationFragment;
+import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
-import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
 
 
 @RuntimePermissions
@@ -96,7 +94,7 @@ public class ScanActivity extends AppCompatActivity
     private Snackbar snackbar;
     private Timer countDownTimer;
     private long startScanTime;
-    FeedbackAgent agent;
+//    FeedbackAgent agent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,15 +145,15 @@ public class ScanActivity extends AppCompatActivity
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                ScanActivityPermissionsDispatcher.onScanStartWithCheck(ScanActivity.this);
+                ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(ScanActivity.this);
             }
         });
 
         navigationView.getMenu().findItem(R.id.nav_about).setTitle(DeviceUtil.getAppVersion(ScanActivity.this));
 
-        // LeanCloud 反馈初始化
-        agent = new FeedbackAgent(this);
-        agent.sync();
+//        // LeanCloud 反馈初始化
+//        agent = new FeedbackAgent(this);
+//        agent.sync();
     }
 
 
@@ -410,7 +408,7 @@ public class ScanActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.scan_start) {
-            ScanActivityPermissionsDispatcher.onScanStartWithCheck(this);
+            ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(this);
         } else if (id == R.id.scan_stop) {
             scanner.stop();
         }
@@ -437,9 +435,9 @@ public class ScanActivity extends AppCompatActivity
             ScanSettingActivity.fragment = new DeviceInfoFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_feedback) {
-            Intent intent = new Intent(this, FeedbackThreadActivity.class);
-            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-            startActivity(intent);
+//            Intent intent = new Intent(this, FeedbackThreadActivity.class);
+//            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+//            startActivity(intent);
         } else if (id == R.id.nav_faq) {
 
         } else if (id == R.id.nav_help) {

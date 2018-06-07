@@ -3,9 +3,8 @@ package xyz.gangle.bleconnector.presentation.customviews;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Typeface;
+import android.support.v7.widget.AppCompatTextView;
 import android.util.AttributeSet;
-import android.widget.TextView;
-
 import xyz.gangle.bleconnector.R;
 
 
@@ -18,7 +17,7 @@ import xyz.gangle.bleconnector.R;
  *     这样的形式使用自定义字体
  * </pre>
  */
-public class FontTextView extends TextView {
+public class FontTextView extends AppCompatTextView {
 
     protected String fontPath;
 

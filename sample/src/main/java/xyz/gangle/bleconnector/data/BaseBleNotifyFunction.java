@@ -2,13 +2,13 @@ package xyz.gangle.bleconnector.data;
 
 import android.content.Context;
 
+import com.tggg.nble.DeviceStateEvent;
+import com.tggg.nble.ifunction.IBleNotifyFunction;
+import com.tggg.util.CommonUtil;
+
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.UUID;
-
-import com.tggg.nble.ifunction.IBleNotifyFunction;
-import com.tggg.util.CommonUtil;
-import com.tggg.nble.DeviceStateEvent;
 
 
 public class BaseBleNotifyFunction implements IBleNotifyFunction {

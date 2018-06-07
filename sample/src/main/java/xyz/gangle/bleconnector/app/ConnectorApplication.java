@@ -3,7 +3,6 @@ package xyz.gangle.bleconnector.app;
 import android.app.Application;
 import android.content.Context;
 
-import com.avos.avoscloud.AVOSCloud;
 import com.tggg.nble.NBle;
 
 import timber.log.Timber;
@@ -36,7 +35,7 @@ public class ConnectorApplication extends Application {
         SharedPrefManager.getInstance().init(this);
 
         // LeanCloud 初始化
-        AVOSCloud.initialize(this, "UtsxPjcH3tf1iF7J7X8UWLRe-gzGzoHsz", "WNsrgzJN9sD22JhYIHdCfjyA");
+//        AVOSCloud.initialize(this, "UtsxPjcH3tf1iF7J7X8UWLRe-gzGzoHsz", "WNsrgzJN9sD22JhYIHdCfjyA");
 
 
     }

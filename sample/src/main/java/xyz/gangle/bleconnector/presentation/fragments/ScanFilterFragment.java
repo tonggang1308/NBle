@@ -12,7 +12,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import org.greenrobot.eventbus.EventBus;
-import org.w3c.dom.Text;
 
 import butterknife.BindView;
 import butterknife.OnCheckedChanged;
