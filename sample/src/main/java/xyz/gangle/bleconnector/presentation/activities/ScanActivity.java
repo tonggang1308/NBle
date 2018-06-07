@@ -145,7 +145,14 @@ public class ScanActivity extends AppCompatActivity
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(ScanActivity.this);
+                if (null != scanner && scanner.isScanning()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                    return;
+                } else {
+                    recyclerView.removeAllViews();
+                    devList.clear();
+                    ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(ScanActivity.this);
+                }
             }
         });
 
@@ -327,6 +334,7 @@ public class ScanActivity extends AppCompatActivity
                 snackbar.dismiss();
             }
             countDownTimer.cancel();
+            swipeRefreshLayout.setRefreshing(false);
         }
 
         @Override
