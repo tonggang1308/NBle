@@ -3,7 +3,7 @@ package xyz.gangle.bleconnector.app;
 import android.app.Application;
 import android.content.Context;
 
-import com.tggg.nble.NBle;
+import com.gangle.nble.NBle;
 
 import timber.log.Timber;
 import xyz.gangle.bleconnector.BuildConfig;

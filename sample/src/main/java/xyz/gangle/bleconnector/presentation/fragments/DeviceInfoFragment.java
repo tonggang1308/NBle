@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.tggg.util.CommonUtil;
+import com.gangle.util.CommonUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

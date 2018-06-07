@@ -3,7 +3,7 @@ package xyz.gangle.bleconnector.preference;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.tggg.util.PreferenceUtil;
+import com.gangle.util.PreferenceUtil;
 
 
 public class SharedPrefManager {

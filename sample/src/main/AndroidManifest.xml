@@ -22,10 +22,10 @@
 
         <activity android:name=".presentation.activities.ScanSettingActivity" />
 
-        <service android:name="com.tggg.nble.NBleService" />
+        <service android:name="com.gangle.nble.NBleService" />
 
         <receiver
-            android:name="com.tggg.nble.BluetoothAdapterStateReceiver"
+            android:name="com.gangle.nble.BluetoothAdapterStateReceiver"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />

@@ -2,9 +2,9 @@ package xyz.gangle.bleconnector.data;
 
 import android.content.Context;
 
-import com.tggg.nble.DeviceStateEvent;
-import com.tggg.nble.ifunction.IBleNotifyFunction;
-import com.tggg.util.CommonUtil;
+import com.gangle.nble.DeviceStateEvent;
+import com.gangle.nble.ifunction.IBleNotifyFunction;
+import com.gangle.util.CommonUtil;
 
 import org.greenrobot.eventbus.EventBus;
 

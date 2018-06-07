@@ -27,13 +27,13 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.tggg.nble.DeviceStateEvent;
-import com.tggg.nble.NBle;
-import com.tggg.nble.NBleDevice;
-import com.tggg.nble.NBleScanner;
-import com.tggg.nble.NBleUtil;
-import com.tggg.util.CommonUtil;
-import com.tggg.util.DeviceUtil;
+import com.gangle.nble.DeviceStateEvent;
+import com.gangle.nble.NBle;
+import com.gangle.nble.NBleDevice;
+import com.gangle.nble.NBleScanner;
+import com.gangle.nble.NBleUtil;
+import com.gangle.util.CommonUtil;
+import com.gangle.util.DeviceUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;

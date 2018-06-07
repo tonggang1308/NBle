@@ -1,6 +1,6 @@
 package xyz.gangle.bleconnector.presentation.comparators;
 
-import com.tggg.nble.NBle;
+import com.gangle.nble.NBle;
 
 import java.util.Comparator;
 
