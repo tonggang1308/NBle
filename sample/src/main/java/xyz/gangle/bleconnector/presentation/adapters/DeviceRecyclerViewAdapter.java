@@ -37,7 +37,7 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.mItem = mValues.get(position);
-        holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "Unknow Device" : holder.mItem.getName());
+        holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "N/A" : holder.mItem.getName());
         holder.textViewAddress.setText(holder.mItem.getAddress());
         holder.textViewRssi.setText(holder.mItem.getRssiString());
         if (holder.mItem.getStatus() == DeviceInfo.DISCONNECTED) {

@@ -38,6 +38,7 @@ class NBleScannerImpl implements NBleScanner {
     private String macEndFilter;
     private Integer rssiFilter;
     private boolean ignoreCase = false;
+    private boolean ignoreUnknown = false;
 
     private int scanNameMatchType = SCAN_NAME_MATCH_HEAD;
 
@@ -131,6 +132,11 @@ class NBleScannerImpl implements NBleScanner {
 
     public void setNameCaseIgnore(boolean ignoreCase) {
         this.ignoreCase = ignoreCase;
+    }
+
+    @Override
+    public void setUnknownDeviceIgnore(boolean ignoreUnknown) {
+        this.ignoreUnknown = ignoreUnknown;
     }
 
     public boolean setMacRange(String start, String end) {
@@ -250,6 +256,9 @@ class NBleScannerImpl implements NBleScanner {
             // filter by name
             if (namesFilter != null) {
                 for (String filterName : namesFilter) {
+                    if (ignoreUnknown && TextUtils.isEmpty(name)) {
+                        return false;
+                    }
                     if (TextUtils.isEmpty(filterName) || (!TextUtils.isEmpty(name))) {
                         if (ignoreCase) {
                             if (name.toUpperCase(Locale.ENGLISH).startsWith(filterName.toUpperCase(Locale.ENGLISH))) {

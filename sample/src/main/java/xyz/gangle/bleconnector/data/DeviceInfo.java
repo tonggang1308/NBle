@@ -64,6 +64,6 @@ public class DeviceInfo {
             return "Close";
         }
 
-        return "Unknow";
+        return "Unknown";
     }
 }

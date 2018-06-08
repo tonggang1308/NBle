@@ -176,7 +176,7 @@ public class DeviceInfoFragment extends BaseFragment {
             case Configuration.SCREENLAYOUT_SIZE_SMALL:
                 return "Small";
             default:
-                return "unknow";
+                return "unknown";
         }
     }
 
@@ -196,7 +196,7 @@ public class DeviceInfoFragment extends BaseFragment {
         else if (density <= DisplayMetrics.DENSITY_XXXHIGH)
             return "xxxhdpi";
         else
-            return "unknow";
+            return "unknown";
     }
 
     public String getDeviceName() {

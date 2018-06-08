@@ -62,6 +62,6 @@ public final class StatusChangeRecord {
             case StatusChangeRecord.CONNECTED_ERROR:
                 return "CONNECTED_ERROR";
         }
-        return "Unknow";
+        return "Unknown";
     }
 }

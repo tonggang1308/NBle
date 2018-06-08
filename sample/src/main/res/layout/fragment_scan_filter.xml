@@ -1,209 +1,262 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/default_background_color"
+    android:fitsSystemWindows="true"
+    android:padding="10dp">
 
-    <LinearLayout
+    <android.support.v7.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        app:contentPaddingBottom="@dimen/size_big"
+        app:contentPaddingLeft="@dimen/size_very_huge"
+        app:contentPaddingRight="@dimen/size_very_huge"
+        app:contentPaddingTop="@dimen/size_big">
 
-        <RelativeLayout
-            android:id="@+id/rl_name"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tv_title_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/size_big"
-                android:text="BY NAME"
-                android:textColor="@color/setting_item_title_text_color"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/et_name"
+            <RelativeLayout
+                android:id="@+id/rl_name"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tv_title_name"
-                android:layout_marginTop="@dimen/size_big"
-                android:background="@null"
-                android:hint="Name"
-                android:maxLength="@integer/name_text_max"
-                android:singleLine="true"
-                android:textColorHint="@color/gray"
-                android:textSize="14sp" />
+                android:layout_height="@dimen/setting_filter_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
 
-            <CheckBox
-                android:id="@+id/checkbox_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
+                <TextView
+                    android:id="@+id/tv_title_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:text="BY NAME"
+                    android:textColor="@color/setting_item_title_text_color"
+                    android:textStyle="bold" />
 
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="#ccc" />
+                <EditText
+                    android:id="@+id/et_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title_name"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:background="@null"
+                    android:hint="Name"
+                    android:maxLength="@integer/name_text_max"
+                    android:singleLine="true"
+                    android:textColorHint="@color/gray"
+                    android:textSize="14sp" />
 
-        <RelativeLayout
-            android:id="@+id/rl_mac"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
+                <CheckBox
+                    android:id="@+id/checkbox_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
 
-            <TextView
-                android:id="@+id/tv_title_mac"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/size_big"
-                android:text="BY MAC ADDRESS"
-                android:textColor="@color/setting_item_title_text_color"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/et_mac"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tv_title_mac"
-                android:layout_marginTop="@dimen/size_big"
-                android:background="@null"
-                android:digits="@string/mac_address_regx"
-                android:hint="AA:BB:CC:DD:EE:FF"
-                android:maxLength="@integer/mac_text_max"
-                android:textColorHint="@color/gray"
-                android:textSize="14sp" />
+                android:layout_height="1px"
+                android:background="#ccc" />
 
-            <CheckBox
-                android:id="@+id/checkbox_mac"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="#ccc" />
-
-        <RelativeLayout
-            android:id="@+id/rl_mac_scope"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
-
-            <TextView
-                android:id="@+id/tv_title_start"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/size_big"
-                android:text="BY MAC ADDRESS SCOPE"
-                android:textColor="@color/setting_item_title_text_color"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/et_mac_start"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tv_title_start"
-                android:layout_marginTop="@dimen/size_big"
-                android:background="@null"
-                android:digits="@string/mac_address_regx"
-                android:gravity="center_horizontal"
-                android:hint="AA:BB:CC:DD:EE:FF"
-                android:maxLines="1"
-                android:textColorHint="@color/gray"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignBaseline="@id/et_mac_start"
-                android:layout_marginLeft="@dimen/size_small"
-                android:layout_marginRight="@dimen/size_small"
-                android:layout_toRightOf="@id/et_mac_start"
-                android:text="-" />
-
-            <EditText
-                android:id="@+id/et_mac_end"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignBaseline="@id/et_mac_start"
-                android:layout_below="@id/tv_title_start"
-                android:layout_marginTop="@dimen/size_big"
-                android:layout_toRightOf="@id/tv"
-                android:background="@null"
-                android:digits="@string/mac_address_regx"
-                android:gravity="center_horizontal"
-                android:hint="AA:BB:CC:DD:EE:FF"
-                android:textColorHint="@color/gray"
-                android:textSize="14sp" />
-
-            <CheckBox
-                android:id="@+id/checkbox_mac_scope"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
-
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="#ccc" />
-
-        <RelativeLayout
-            android:id="@+id/rl_rssi"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_filter_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
-
-            <TextView
-                android:id="@+id/tv_title_rssi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/size_big"
-                android:text="BY RSSI"
-                android:textColor="@color/setting_item_title_text_color"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_rssi"
-                android:layout_width="60dp"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tv_title_rssi"
-                android:layout_marginTop="@dimen/size_big"
-                android:background="@null"
-                android:text="-99 dBm" />
-
-            <SeekBar
-                android:id="@+id/seekBar"
+            <RelativeLayout
+                android:id="@+id/rl_mac"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignTop="@+id/tv_rssi"
-                android:layout_marginRight="@dimen/size_big"
-                android:layout_toLeftOf="@+id/checkbox_rssi"
-                android:layout_toRightOf="@+id/tv_rssi" />
+                android:layout_height="@dimen/setting_filter_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
 
-            <CheckBox
-                android:id="@+id/checkbox_rssi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true" />
+                <TextView
+                    android:id="@+id/tv_title_mac"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:text="BY MAC ADDRESS"
+                    android:textColor="@color/setting_item_title_text_color"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_mac"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title_mac"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:background="@null"
+                    android:digits="@string/mac_address_regx"
+                    android:hint="AA:BB:CC:DD:EE:FF"
+                    android:maxLength="@integer/mac_text_max"
+                    android:textColorHint="@color/gray"
+                    android:textSize="14sp" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_mac"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#ccc" />
+
+            <RelativeLayout
+                android:id="@+id/rl_mac_scope"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/setting_filter_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
+
+                <TextView
+                    android:id="@+id/tv_title_start"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:text="BY MAC ADDRESS SCOPE"
+                    android:textColor="@color/setting_item_title_text_color"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_mac_start"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title_start"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:background="@null"
+                    android:digits="@string/mac_address_regx"
+                    android:gravity="center_horizontal"
+                    android:hint="AA:BB:CC:DD:EE:FF"
+                    android:maxLines="1"
+                    android:textColorHint="@color/gray"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/et_mac_start"
+                    android:layout_marginLeft="@dimen/size_small"
+                    android:layout_marginRight="@dimen/size_small"
+                    android:layout_toRightOf="@id/et_mac_start"
+                    android:text="-" />
+
+                <EditText
+                    android:id="@+id/et_mac_end"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/et_mac_start"
+                    android:layout_below="@id/tv_title_start"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:layout_toRightOf="@id/tv"
+                    android:background="@null"
+                    android:digits="@string/mac_address_regx"
+                    android:gravity="center_horizontal"
+                    android:hint="AA:BB:CC:DD:EE:FF"
+                    android:textColorHint="@color/gray"
+                    android:textSize="14sp" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_mac_scope"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
 
 
-        </RelativeLayout>
-    </LinearLayout>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#ccc" />
 
+            <RelativeLayout
+                android:id="@+id/rl_rssi"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/setting_filter_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
+
+                <TextView
+                    android:id="@+id/tv_title_rssi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:text="BY RSSI"
+                    android:textColor="@color/setting_item_title_text_color"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_rssi"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title_rssi"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:background="@null"
+                    android:text="-99 dBm" />
+
+                <SeekBar
+                    android:id="@+id/seekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@+id/tv_rssi"
+                    android:layout_marginRight="@dimen/size_big"
+                    android:layout_toLeftOf="@+id/checkbox_rssi"
+                    android:layout_toRightOf="@+id/tv_rssi" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_rssi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+
+
+            </RelativeLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#ccc" />
+
+            <RelativeLayout
+                android:id="@+id/rl_na"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/setting_filter_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
+
+                <TextView
+                    android:id="@+id/tv_title_na"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:text="HIDE N/A"
+                    android:textColor="@color/setting_item_title_text_color"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title_na"
+                    android:layout_marginTop="@dimen/size_big"
+                    android:background="@null"
+                    android:editable="false"
+                    android:text="Hide n/a devices" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_na"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+
+
+            </RelativeLayout>
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
 </RelativeLayout>

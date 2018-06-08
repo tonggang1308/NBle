@@ -39,6 +39,14 @@ public interface NBleScanner {
      */
     void setNameCaseIgnore(boolean ignoreCase);
 
+
+    /**
+     * ignore unknown device
+     *
+     * @param ignoreUnknown
+     */
+    void setUnknownDeviceIgnore(boolean ignoreUnknown);
+
     /**
      * filter by rssi
      *

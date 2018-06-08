@@ -80,7 +80,7 @@ public class DeviceStateEvent {
             case RSSI:
                 return "RSSI";
         }
-        return "Unknow";
+        return "Unknown";
     }
 
 }

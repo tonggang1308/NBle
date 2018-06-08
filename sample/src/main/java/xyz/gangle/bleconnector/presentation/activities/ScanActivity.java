@@ -620,6 +620,9 @@ public class ScanActivity extends AppCompatActivity
             String name = SharedPrefManager.getInstance().getFilterName();
             scanner.setScanName(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE) ? name : null);
 
+            // na filter
+            scanner.setUnknownDeviceIgnore(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE));
+
             // mac filter
             String mac = SharedPrefManager.getInstance().getFilterMac();
             scanner.setMac(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE) ? mac : null);

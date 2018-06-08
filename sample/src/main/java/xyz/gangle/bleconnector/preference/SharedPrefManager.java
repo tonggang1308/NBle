@@ -44,6 +44,12 @@ public class SharedPrefManager {
     public static final String KEY_FILTER_RSSI_ENABLE = "KEY_FILTER_RSSI_ENABLE";
     public static final String KEY_FILTER_RSSI_VALUE = "KEY_FILTER_RSSI_VALUE";
 
+    /**
+     * filter NA DEVICE
+     */
+    public static final String KEY_FILTER_UNKNOWN_DEVICE_ENABLE = "KEY_FILTER_UNKNOWN_DEVICE_ENABLE";
+
+
     private SharedPrefManager() {
     }
 
@@ -74,7 +80,7 @@ public class SharedPrefManager {
      * 扫描时间
      */
     public int getScanDuration() {
-        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_DURATION, 1);
+        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_DURATION, 6);
     }
 
     public void setScanDuration(int duration) {

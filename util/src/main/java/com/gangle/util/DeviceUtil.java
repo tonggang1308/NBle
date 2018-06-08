@@ -230,7 +230,7 @@ public class DeviceUtil {
                 return "中国电信";
             }
         }
-        return "unknow";
+        return "unknown";
 
     }
 
@@ -818,16 +818,16 @@ public class DeviceUtil {
      * 取得网络类型，根据网络制式
      *
      * @param context
-     * @return 返回分别是WIFI, 2G, 3G, 4G, UNKNOW
+     * @return 返回分别是WIFI, 2G, 3G, 4G, UNKNOWN
      */
     public static String getNetworkTypeName(Context context) {
         if (context == null) {
-            return "UNKNOW";
+            return "UNKNOWN";
         }
         ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkinfo = connManager.getActiveNetworkInfo();
         if (networkinfo == null) {
-            return "UNKNOW";
+            return "UNKNOWN";
         }
         int type = networkinfo.getType();
         if (type == ConnectivityManager.TYPE_WIFI) {
@@ -857,7 +857,7 @@ public class DeviceUtil {
 
             }
         }
-        return "UNKNOW";
+        return "UNKNOWN";
     }
 
     /**

@@ -23,7 +23,7 @@
             android:id="@+id/textViewName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="unknow device"
+            android:text="N/A"
             android:textSize="18sp" />
 
         <TextView
