@@ -18,6 +18,8 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -346,6 +348,18 @@ public class CommonUtil {
         mac.init(signingKey);
         byte[] r = mac.doFinal(data.getBytes());
         return Base64.encodeToString(r, Base64.DEFAULT).trim();
+    }
+
+    /**
+     * 设置group内的view的enable状态
+     * @param group
+     * @param enable
+     */
+    public static void setGroupLayoutEnable(ViewGroup group, boolean enable) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View view = group.getChildAt(i);
+            view.setEnabled(enable); // Or whatever you want to do with the view.
+        }
     }
 
 

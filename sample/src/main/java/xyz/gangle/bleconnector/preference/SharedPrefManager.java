@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 
 import com.gangle.util.PreferenceUtil;
 
+import java.util.List;
+
+import xyz.gangle.bleconnector.data.SortItemInfo;
+
 
 public class SharedPrefManager {
     SharedPreferences sharedPreferences;
@@ -150,6 +154,14 @@ public class SharedPrefManager {
 
     public void setFilterRssi(int rssi) {
         PreferenceUtil.write(sharedPreferences, KEY_FILTER_RSSI_VALUE, rssi);
+    }
+
+    public List<SortItemInfo> getSortOrder() {
+        return null;
+    }
+
+    public void setSortOrder(List<SortItemInfo> list) {
+
     }
 
 }
