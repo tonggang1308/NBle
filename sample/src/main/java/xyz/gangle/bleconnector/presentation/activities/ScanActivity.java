@@ -41,6 +41,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -55,8 +56,10 @@ import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
 import xyz.gangle.bleconnector.data.ConstData;
 import xyz.gangle.bleconnector.data.DeviceInfo;
+import xyz.gangle.bleconnector.data.SortItemInfo;
 import xyz.gangle.bleconnector.events.FilterChangeEvent;
 import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
+import xyz.gangle.bleconnector.events.SortChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
@@ -536,7 +539,8 @@ public class ScanActivity extends AppCompatActivity
     protected boolean addDeviceInfo(DeviceInfo info) {
         if (getDeviceInfo(info.getAddress()) == null) {
             devList.add(info);
-            recyclerView.getAdapter().notifyItemInserted(devList.size() - 1);
+            updateSort();
+//            recyclerView.getAdapter().notifyItemInserted(devList.size() - 1);
             return true;
         }
         return false;
@@ -600,6 +604,11 @@ public class ScanActivity extends AppCompatActivity
     }
 
     @Subscribe
+    public void onSortChangeChange(SortChangeEvent event) {
+        updateSort();
+    }
+
+    @Subscribe
     public void onFilterChange(FilterChangeEvent event) {
         updateFilter();
     }
@@ -610,6 +619,34 @@ public class ScanActivity extends AppCompatActivity
             scanDuration = NBleScanner.INDEFINITE;
         } else if (mode == ConstData.Scan.MODE_MANUAL) {
             scanDuration = 1000 * SharedPrefManager.getInstance().getScanDuration();
+        }
+    }
+
+    protected void updateSort() {
+        final List<SortItemInfo> sortInfoList = SharedPrefManager.getInstance().getSortOrder();
+
+        if (sortInfoList != null && devList != null) {
+            for (int i = sortInfoList.size() - 1; i >= 0; i--) {
+                final SortItemInfo sortInfo = sortInfoList.get(i);
+                if (sortInfo.isEnable) {
+                    Collections.sort(devList, new Comparator<DeviceInfo>() {
+                        @Override
+                        public int compare(DeviceInfo o1, DeviceInfo o2) {
+                            if (sortInfo.type == SortItemInfo.ByName) {
+                                String n1 = (o1.getName() == null) ? "N/A" : o1.getName();
+                                String n2 = (o2.getName() == null) ? "N/A" : o2.getName();
+                                return n1.compareTo(n2);
+                            } else if (sortInfo.type == SortItemInfo.ByRSSI) {
+                                return o1.getRssi().compareTo(o2.getRssi());
+                            } else if (sortInfo.type == SortItemInfo.ByMacAddress) {
+                                return o1.getAddress().compareTo(o2.getAddress());
+                            }
+                            return 0;
+                        }
+                    });
+                }
+            }
+            recyclerView.getAdapter().notifyDataSetChanged();
         }
     }
 

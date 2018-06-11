@@ -97,14 +97,13 @@ public class ScanSortFragment extends BaseFragment {
 
         // 遍历sortItemInfoList，如果缺少sort类型，就补一个。
         for (int type : types) {
-            if (0 > Collections.binarySearch(sortItemInfoList, new SortItemInfo(type, false, false),
-                    new Comparator<SortItemInfo>() {
-                        @Override
-                        public int compare(SortItemInfo o1, SortItemInfo o2) {
-                            return o1.type - o2.type;
-                        }
-                    }
-            )) {
+            boolean found = false;
+            for (SortItemInfo info: sortItemInfoList) {
+                if (info.type == type) {
+                    found = true;
+                }
+            }
+            if (!found) {
                 sortItemInfoList.add(new SortItemInfo(type, false, false));
             }
         }
@@ -115,6 +114,7 @@ public class ScanSortFragment extends BaseFragment {
      * 保存设置和参数
      */
     protected void storeSortOrder() {
+        SharedPrefManager.getInstance().setSortOrder(sortItemInfoList);
         // 序列化
         EventBus.getDefault().post(new SortChangeEvent());
     }

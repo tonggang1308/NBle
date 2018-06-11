@@ -4,7 +4,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.gangle.util.PreferenceUtil;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import xyz.gangle.bleconnector.data.SortItemInfo;
@@ -52,6 +55,11 @@ public class SharedPrefManager {
      * filter NA DEVICE
      */
     public static final String KEY_FILTER_UNKNOWN_DEVICE_ENABLE = "KEY_FILTER_UNKNOWN_DEVICE_ENABLE";
+
+    /**
+     * sort show order
+     */
+    public static final String KEY_SORT_ORDER = "KEY_SORT_ORDER";
 
 
     private SharedPrefManager() {
@@ -157,11 +165,15 @@ public class SharedPrefManager {
     }
 
     public List<SortItemInfo> getSortOrder() {
-        return null;
+        String json = PreferenceUtil.readString(sharedPreferences, KEY_SORT_ORDER);
+
+        List<SortItemInfo> list = new Gson().fromJson(json, new TypeToken<ArrayList<SortItemInfo>>(){}.getType());
+        return list;
     }
 
     public void setSortOrder(List<SortItemInfo> list) {
-
+        String json = new Gson().toJson(list);
+        PreferenceUtil.write(sharedPreferences, KEY_SORT_ORDER, json);
     }
 
 }
