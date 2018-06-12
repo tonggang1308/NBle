@@ -11,36 +11,23 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
-import android.text.TextUtils;
 
-import com.google.gson.Gson;
+import com.gangle.nble.ScanFilter.IScanFilter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 import timber.log.Timber;
 
+
+
 @TargetApi(21)
 class NBleScannerImpl implements NBleScanner {
 
-    private static final String MAC_ADDRESS_REGEX = "^([0-9a-fA-F]{2})(([/\\s:-][0-9a-fA-F]{2}){5})$";
-    public static final int SCAN_NAME_MATCH_WHOLE = 0x00;
-    public static final int SCAN_NAME_MATCH_HEAD = 0x01;
-    public static final int SCAN_NAME_MATCH_TAIL = 0x02;
-    public static final int SCAN_NAME_MATCH_CONTAIN = 0x03;
-
     private Context context;
     private UUID[] uuids;
-    private String[] namesFilter;
-    private String macStartFilter;
-    private String macEndFilter;
-    private Integer rssiFilter;
-    private boolean ignoreCase = false;
-    private boolean ignoreUnknown = false;
-
-    private int scanNameMatchType = SCAN_NAME_MATCH_HEAD;
+    private IScanFilter[] scanFilters;
 
     private final BluetoothAdapter.LeScanCallback mLeScanCallback; // of android
     private ScanCallback m21Scancalback;
@@ -104,9 +91,18 @@ class NBleScannerImpl implements NBleScanner {
         }
 
         // whether device match the filters
-        if (isMatchMacRange(device.getAddress()) && isMatchName(device.getName()) && isMatchRssi(rssi)) {
-            Timber.v("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
+        if (scanFilters != null && scanFilters.length > 0) {
+            for (IScanFilter filter : scanFilters) {
+                if (filter.isMatch(device, rssi)) {
+                    Timber.v("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
+                    mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
+                    return;
+                }
+            }
+        } else {
+            Timber.v("NO MATCH FILTER!");
             mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
+            return;
         }
     }
 
@@ -118,49 +114,14 @@ class NBleScannerImpl implements NBleScanner {
         this.uuids = uuids;
     }
 
-    public void setScanName(String scanName) {
-        this.namesFilter = new String[]{scanName};
-    }
-
-    public void setScanNames(String[] scanNames) {
-        this.namesFilter = scanNames;
-    }
-
-    public void setRssiLimit(Integer rssi) {
-        this.rssiFilter = rssi;
-    }
-
-    public void setNameCaseIgnore(boolean ignoreCase) {
-        this.ignoreCase = ignoreCase;
-    }
-
-    @Override
-    public void setUnknownDeviceIgnore(boolean ignoreUnknown) {
-        this.ignoreUnknown = ignoreUnknown;
-    }
-
-    public boolean setMacRange(String start, String end) {
-        if (start == null || end == null) {
-            this.macStartFilter = start;
-            this.macEndFilter = end;
-            return true;
-        } else if (start.matches(MAC_ADDRESS_REGEX) && end.matches(MAC_ADDRESS_REGEX)) {
-            this.macStartFilter = start;
-            this.macEndFilter = end;
-            return true;
-        }
-        return false;
-    }
-
-    public void setMac(String mac) {
-        setMacRange(mac, mac);
+    public void setFilters(IScanFilter[] filters) {
+        this.scanFilters = filters;
     }
 
     public boolean start(BleScanListener callback) {
         return start(callback, INDEFINITE);
     }
 
-    @Override
     public boolean start(BleScanListener callback, int duration) {
         addressList.clear();
         return start(uuids, callback, duration);
@@ -185,8 +146,6 @@ class NBleScannerImpl implements NBleScanner {
 
 
         if (!mScanning) {
-            if (namesFilter != null)
-                Timber.d("Scan name : " + new Gson().toJson(namesFilter));
 
             mScanListener = listener;
 
@@ -245,61 +204,6 @@ class NBleScannerImpl implements NBleScanner {
             }
         }
         mScanListener = null;
-    }
-
-
-    /**
-     * 判断是否符合name的filter
-     */
-    protected boolean isMatchName(String name) {
-        try {
-            // filter by name
-            if (namesFilter != null) {
-                for (String filterName : namesFilter) {
-                    if (ignoreUnknown && TextUtils.isEmpty(name)) {
-                        return false;
-                    }
-                    if (TextUtils.isEmpty(filterName) || (!TextUtils.isEmpty(name))) {
-                        if (ignoreCase) {
-                            if (name.toUpperCase(Locale.ENGLISH).startsWith(filterName.toUpperCase(Locale.ENGLISH))) {
-                                throw new Exception("name is match");
-                            }
-                        } else {
-                            if (name.startsWith(filterName)) {
-                                throw new Exception("name is match");
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        } catch (Exception e) {
-
-        }
-        return true;
-    }
-
-
-    /**
-     * 判断是否符合mac address filter
-     */
-    protected boolean isMatchMacRange(String address) {
-        if (TextUtils.isEmpty(macStartFilter) || TextUtils.isEmpty(macStartFilter)) {
-            return true;
-        }
-
-        if (!TextUtils.isEmpty(address) && address.compareToIgnoreCase(macStartFilter) >= 0 && address.compareToIgnoreCase(macEndFilter) <= 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * 判断是否符合rssi filter
-     */
-    protected boolean isMatchRssi(int rssi) {
-        return rssiFilter == null || rssiFilter <= rssi;
     }
 
     public synchronized boolean isScanning() {

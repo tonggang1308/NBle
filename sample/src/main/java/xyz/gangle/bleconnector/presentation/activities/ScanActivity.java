@@ -32,6 +32,10 @@ import com.gangle.nble.NBle;
 import com.gangle.nble.NBleDevice;
 import com.gangle.nble.NBleScanner;
 import com.gangle.nble.NBleUtil;
+import com.gangle.nble.ScanFilter.AddressScanFilter;
+import com.gangle.nble.ScanFilter.IScanFilter;
+import com.gangle.nble.ScanFilter.NameScanFilter;
+import com.gangle.nble.ScanFilter.RssiScanFilter;
 import com.gangle.util.CommonUtil;
 import com.gangle.util.DeviceUtil;
 
@@ -70,6 +74,8 @@ import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanSortFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 
+import static xyz.gangle.bleconnector.preference.SharedPrefManager.getInstance;
+
 
 @RuntimePermissions
 public class ScanActivity extends AppCompatActivity
@@ -94,7 +100,6 @@ public class ScanActivity extends AppCompatActivity
     private List<DeviceInfo> devList = Collections.synchronizedList(new ArrayList<DeviceInfo>());
     private NBleScanner scanner;
     private int scanDuration = NBleScanner.INDEFINITE;
-    private RssiComparator comparator = new RssiComparator();
     private Snackbar snackbar;
     private Timer countDownTimer;
     private long startScanTime;
@@ -126,7 +131,7 @@ public class ScanActivity extends AppCompatActivity
         recyclerView.setAdapter(new DeviceRecyclerViewAdapter(devList, this));
 
         // 创建scanner
-        scanner = new NBle.ScannerBuilder(this).setNameIgnoreCase(true).build();
+        scanner = new NBle.ScannerBuilder(this).build();
 
         // 设置 scan filter
         updateFilter();
@@ -614,16 +619,16 @@ public class ScanActivity extends AppCompatActivity
     }
 
     protected void updateDuration() {
-        int mode = SharedPrefManager.getInstance().getScanMode();
+        int mode = getInstance().getScanMode();
         if (mode == ConstData.Scan.MODE_CONTINUOUS) {
             scanDuration = NBleScanner.INDEFINITE;
         } else if (mode == ConstData.Scan.MODE_MANUAL) {
-            scanDuration = 1000 * SharedPrefManager.getInstance().getScanDuration();
+            scanDuration = 1000 * getInstance().getScanDuration();
         }
     }
 
     protected void updateSort() {
-        final List<SortItemInfo> sortInfoList = SharedPrefManager.getInstance().getSortOrder();
+        final List<SortItemInfo> sortInfoList = getInstance().getSortOrder();
 
         if (sortInfoList != null && devList != null) {
             for (int i = sortInfoList.size() - 1; i >= 0; i--) {
@@ -655,29 +660,37 @@ public class ScanActivity extends AppCompatActivity
      */
     protected void updateFilter() {
         if (scanner != null) {
-            // name filter
-            String name = SharedPrefManager.getInstance().getFilterName();
-            scanner.setScanName(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE) ? name : null);
+            List<IScanFilter> scanFilterList = Collections.synchronizedList(new ArrayList<IScanFilter>());
 
-            // na filter
-            scanner.setUnknownDeviceIgnore(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE));
+            // name filter
+            boolean ignoreUnknown = getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE)) {
+                String name = getInstance().getFilterName();
+                scanFilterList.add(new NameScanFilter(new String[]{name}, ignoreUnknown , true));
+            }else {
+                scanFilterList.add(new NameScanFilter(null, ignoreUnknown, true));
+            }
 
             // mac filter
-            String mac = SharedPrefManager.getInstance().getFilterMac();
-            scanner.setMac(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE) ? mac : null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE)) {
+                String mac = getInstance().getFilterMac();
+                scanFilterList.add(new AddressScanFilter(mac));
+            }
 
             // mac range filter
-            String start = SharedPrefManager.getInstance().getFilterMacStart();
-            String end = SharedPrefManager.getInstance().getFilterMacEnd();
-            if (SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE)) {
-                scanner.setMacRange(start, end);
-            } else {
-                scanner.setMacRange(null, null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE)) {
+                String start = getInstance().getFilterMacStart();
+                String end = getInstance().getFilterMacEnd();
+                scanFilterList.add(new AddressScanFilter(start, end));
             }
 
             // rssi filter
-            int rssi = -SharedPrefManager.getInstance().getFilterRssi();
-            scanner.setRssiLimit(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE) ? rssi : null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE)) {
+                int rssi = -getInstance().getFilterRssi();
+                scanFilterList.add(new RssiScanFilter(rssi));
+            }
+
+            scanner.setFilters(scanFilterList.toArray(new IScanFilter[scanFilterList.size()]));
         }
     }
 
