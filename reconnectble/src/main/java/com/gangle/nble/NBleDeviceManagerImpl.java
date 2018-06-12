@@ -3,7 +3,7 @@ package com.gangle.nble;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
-import com.gangle.nble.ifunction.IBleNotifyFunction;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,12 +34,12 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据不同设备的notification的处理接口的列表，此表是根据设备名来区分。
      */
-    private Map<String, IBleNotifyFunction> mNotifySubscription = Collections.synchronizedMap(new LinkedHashMap<String, IBleNotifyFunction>());
+    private Map<String, INBleNotifyFunction> mNotifySubscription = Collections.synchronizedMap(new LinkedHashMap<String, INBleNotifyFunction>());
 
     /**
      * 默认的notification的处理接口。当在mNotifySubscription中没有找到对应设备的处理接口，则使用默认的。
      */
-    private IBleNotifyFunction mDefaultSubscription;
+    private INBleNotifyFunction mDefaultSubscription;
 
     /**
      * 禁止外部新建实例
@@ -154,15 +154,15 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 根据设备名获取notification的接口
      */
-    public synchronized IBleNotifyFunction getNotification(String deviceName) {
-        IBleNotifyFunction ifunction = mNotifySubscription.get(deviceName);
+    public synchronized INBleNotifyFunction getNotification(String deviceName) {
+        INBleNotifyFunction ifunction = mNotifySubscription.get(deviceName);
         return ifunction == null ? mDefaultSubscription : ifunction;
     }
 
     /**
      * 根据设备名注册notification的处理接口
      */
-    public synchronized void registerNotification(String deviceName, IBleNotifyFunction iFunction) {
+    public synchronized void registerNotification(String deviceName, INBleNotifyFunction iFunction) {
         if (!mNotifySubscription.containsKey(deviceName)) {
             mNotifySubscription.put(deviceName, iFunction);
         }
@@ -171,7 +171,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 注册notification的默认处理接口
      */
-    public void registerDefaultNotification(IBleNotifyFunction iFunction) {
+    public void registerDefaultNotification(INBleNotifyFunction iFunction) {
         mDefaultSubscription = iFunction;
     }
 

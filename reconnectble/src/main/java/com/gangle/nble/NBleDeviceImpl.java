@@ -14,7 +14,7 @@ import android.content.Context;
 import com.google.gson.Gson;
 import com.gangle.nble.Record.StatusChangeRecord;
 import com.gangle.nble.device.DeviceBase;
-import com.gangle.nble.ifunction.IBleNotifyFunction;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +53,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     /**
      * 通知接口。当有Notification达到时，调用此接口。
      */
-    private IBleNotifyFunction iBleNotifyFunction;
+    private INBleNotifyFunction iNBleNotifyFunction;
 
     private NBleDeviceImpl() {
         super(null, null);
@@ -188,23 +188,23 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public void onReadImpl(String address, UUID uuid, byte[] value) {
-        if (iBleNotifyFunction != null) {
-            iBleNotifyFunction.onRead(context, address, uuid, value);
+        if (iNBleNotifyFunction != null) {
+            iNBleNotifyFunction.onRead(context, address, uuid, value);
         }
     }
 
     public void onWriteImpl(String address, UUID uuid, byte[] value) {
-        if (iBleNotifyFunction != null) {
-            iBleNotifyFunction.onWrite(context, address, uuid, value);
+        if (iNBleNotifyFunction != null) {
+            iNBleNotifyFunction.onWrite(context, address, uuid, value);
         }
     }
 
-    public IBleNotifyFunction getNotifyFunction() {
-        return this.iBleNotifyFunction;
+    public INBleNotifyFunction getNotifyFunction() {
+        return this.iNBleNotifyFunction;
     }
 
-    public void setiNotifyFunction(IBleNotifyFunction iNotifyFunction) {
-        this.iBleNotifyFunction = iNotifyFunction;
+    public void setiNotifyFunction(INBleNotifyFunction iNotifyFunction) {
+        this.iNBleNotifyFunction = iNotifyFunction;
     }
 
     /**
@@ -322,8 +322,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         isConnecting = true;
 
         recordStatus(StatusChangeRecord.CONNECT);
-        if (iBleNotifyFunction != null) {
-            iBleNotifyFunction.onConnectStart(context, getAddress());
+        if (iNBleNotifyFunction != null) {
+            iNBleNotifyFunction.onConnectStart(context, getAddress());
         }
 
         bleGatt = bluetoothDevice.connectGatt(context, autoConnect, gattCallBack);
@@ -333,13 +333,13 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             recordStatus(StatusChangeRecord.CONNECTED_ERROR);
 
             // onConnectFinish 是根据bleGatt来判定是否要调用。
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onConnectFinish(context, getAddress());
+            if (iNBleNotifyFunction != null) {
+                iNBleNotifyFunction.onConnectFinish(context, getAddress());
             }
             return false;
         } else {
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onConnecting(context, getAddress());
+            if (iNBleNotifyFunction != null) {
+                iNBleNotifyFunction.onConnecting(context, getAddress());
             }
         }
 
@@ -370,8 +370,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             bleGatt = null;
             recordStatus(StatusChangeRecord.CLOSE);
 
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onConnectFinish(context, getAddress());
+            if (iNBleNotifyFunction != null) {
+                iNBleNotifyFunction.onConnectFinish(context, getAddress());
             }
         }
     }
@@ -393,7 +393,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             final String address = gatt.getDevice().getAddress();
             String deviceName = gatt.getDevice().getName();
 
-            Timber.i(getName() + ", " + address + ", " + iBleNotifyFunction.getClass().getName() + ", Connection operation status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState));
+            Timber.i(getName() + ", " + address + ", " + iNBleNotifyFunction.getClass().getName() + ", Connection operation status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState));
 
             try {
                 isConnecting = false;
@@ -409,8 +409,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
                             gatt.discoverServices();
 
-                            if (iBleNotifyFunction != null) {
-                                iBleNotifyFunction.onConnected(context, gatt.getDevice().getAddress());
+                            if (iNBleNotifyFunction != null) {
+                                iNBleNotifyFunction.onConnected(context, gatt.getDevice().getAddress());
                             }
                         } else {
                             // status == GATT_ERROR
@@ -425,8 +425,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         // 如果用户主动disconnect，需要手动removeFromMaintain，否则也会重新连接。
                         recordStatus(StatusChangeRecord.DISCONNECTED);
 
-                        if (iBleNotifyFunction != null) {
-                            iBleNotifyFunction.onDisconnected(context, gatt.getDevice().getAddress());
+                        if (iNBleNotifyFunction != null) {
+                            iNBleNotifyFunction.onDisconnected(context, gatt.getDevice().getAddress());
                         }
 
                         if (bluetoothAdapter.isEnabled() && getManager().isMaintain(address)) {
@@ -437,8 +437,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                                     Timber.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
                                     isConnecting = true;
                                     recordStatus(StatusChangeRecord.AUTOCONNECT);
-                                    if (iBleNotifyFunction != null) {
-                                        iBleNotifyFunction.onConnecting(context, gatt.getDevice().getAddress());
+                                    if (iNBleNotifyFunction != null) {
+                                        iNBleNotifyFunction.onConnecting(context, gatt.getDevice().getAddress());
                                     }
                                 } else {
                                     Timber.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
@@ -505,12 +505,12 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
             //
             // Timber.i("Notification Addr:%s\tChara:%s\tValue:%s\t", gatt.getDevice().getAddress(), characteristic.getUuid().toString(), StringUtil.getHexString(value));
-            if (iBleNotifyFunction != null) {
-                UUID[] notifyUuids = iBleNotifyFunction.getNotifyUuid();
+            if (iNBleNotifyFunction != null) {
+                UUID[] notifyUuids = iNBleNotifyFunction.getNotifyUuid();
                 if (notifyUuids != null) {
                     for (UUID uuid : notifyUuids) {
                         if (uuid.equals(characteristic.getUuid())) {
-                            iBleNotifyFunction.onNotify(context, gatt.getDevice().getAddress(), characteristic.getUuid(), characteristic.getValue());
+                            iNBleNotifyFunction.onNotify(context, gatt.getDevice().getAddress(), characteristic.getUuid(), characteristic.getValue());
                             return;
                         }
                     }
@@ -539,8 +539,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
 //            Timber.d("onReadRemoteRssi: " + gatt.getDevice().getAddress() + " rssi: " + rssi + " status: " + status);
-            if (iBleNotifyFunction != null) {
-                iBleNotifyFunction.onRssi(context, gatt.getDevice().getAddress(), rssi);
+            if (iNBleNotifyFunction != null) {
+                iNBleNotifyFunction.onRssi(context, gatt.getDevice().getAddress(), rssi);
             }
         }
 

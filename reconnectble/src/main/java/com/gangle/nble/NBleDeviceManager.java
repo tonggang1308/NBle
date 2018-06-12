@@ -1,6 +1,6 @@
 package com.gangle.nble;
 
-import com.gangle.nble.ifunction.IBleNotifyFunction;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.List;
 
@@ -44,17 +44,17 @@ public interface NBleDeviceManager {
     /**
      * 根据设备名获取notification的接口
      */
-    IBleNotifyFunction getNotification(String deviceName);
+    INBleNotifyFunction getNotification(String deviceName);
 
     /**
      * 根据设备名注册notification的处理接口
      */
-    void registerNotification(String deviceName, IBleNotifyFunction iFunction);
+    void registerNotification(String deviceName, INBleNotifyFunction iFunction);
 
     /**
      * 注册notification的默认处理接口
      */
-    void registerDefaultNotification(IBleNotifyFunction iFunction);
+    void registerDefaultNotification(INBleNotifyFunction iFunction);
 
     /**
      * 删除设备

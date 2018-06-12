@@ -4,7 +4,7 @@ import android.content.Context;
 
 import java.util.UUID;
 
-public interface IBleNotifyFunction {
+public interface INBleNotifyFunction {
 
     /**
      * 获得设备所有的通知uuid

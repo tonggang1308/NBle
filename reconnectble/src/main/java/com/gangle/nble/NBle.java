@@ -2,7 +2,7 @@ package com.gangle.nble;
 
 import android.content.Context;
 
-import com.gangle.nble.ifunction.IBleNotifyFunction;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.UUID;
 
@@ -34,6 +34,9 @@ public final class NBle {
 
     }
 
+    /**
+     * BLE Scanner Builder
+     */
     public static class ScannerBuilder {
         NBleScannerImpl nBleScanner;
 
@@ -69,17 +72,17 @@ public final class NBle {
             return this;
         }
 
-        public DeviceBuilder setINotifyFunction(IBleNotifyFunction iBleNotifyFunction) {
-            this.nBleDevice.setiNotifyFunction(iBleNotifyFunction);
+        public DeviceBuilder setINotifyFunction(INBleNotifyFunction iNBleNotifyFunction) {
+            this.nBleDevice.setiNotifyFunction(iNBleNotifyFunction);
             return this;
         }
 
         public NBleDevice build() {
             if (this.nBleDevice.getNotifyFunction() == null) {
                 // 根据设备名获取notify function
-                IBleNotifyFunction iBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
-                setINotifyFunction(iBleNotifyFunction);
-                Timber.d("Builder set iBleNotifyFunction: %s", iBleNotifyFunction == null ? "null" : iBleNotifyFunction.getClass().getName());
+                INBleNotifyFunction iNBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
+                setINotifyFunction(iNBleNotifyFunction);
+                Timber.d("Builder set iNBleNotifyFunction: %s", iNBleNotifyFunction == null ? "null" : iNBleNotifyFunction.getClass().getName());
             }
             NBleDeviceManagerImpl.getInstance().add(this.nBleDevice);
             return this.nBleDevice;
