@@ -54,38 +54,38 @@ public final class NBle {
         }
     }
 
-    /**
-     * BLE Device Builder
-     */
-    public static class DeviceBuilder {
-        private NBleDeviceImpl nBleDevice;
-
-        private DeviceBuilder() {
-        }
-
-        public DeviceBuilder(String address, String name) {
-            this.nBleDevice = new NBleDeviceImpl(NBleDeviceManagerImpl.getInstance().getContext(), address, name);
-        }
-
-        public DeviceBuilder setMaintain(boolean isMaintain) {
-            this.nBleDevice.setMaintain(isMaintain);
-            return this;
-        }
-
-        public DeviceBuilder setINotifyFunction(INBleNotifyFunction iNBleNotifyFunction) {
-            this.nBleDevice.setiNotifyFunction(iNBleNotifyFunction);
-            return this;
-        }
-
-        public NBleDevice build() {
-            if (this.nBleDevice.getNotifyFunction() == null) {
-                // 根据设备名获取notify function
-                INBleNotifyFunction iNBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
-                setINotifyFunction(iNBleNotifyFunction);
-                Timber.d("Builder set iNBleNotifyFunction: %s", iNBleNotifyFunction == null ? "null" : iNBleNotifyFunction.getClass().getName());
-            }
-            NBleDeviceManagerImpl.getInstance().add(this.nBleDevice);
-            return this.nBleDevice;
-        }
-    }
+//    /**
+//     * BLE Device Builder
+//     */
+//    public static class DeviceBuilder {
+//        private NBleDeviceImpl nBleDevice;
+//
+//        private DeviceBuilder() {
+//        }
+//
+//        public DeviceBuilder(String address, String name) {
+//            this.nBleDevice = new NBleDeviceImpl(NBleDeviceManagerImpl.getInstance().getContext(), address, name);
+//        }
+//
+//        public DeviceBuilder setMaintain(boolean isMaintain) {
+//            this.nBleDevice.setMaintain(isMaintain);
+//            return this;
+//        }
+//
+//        public DeviceBuilder setINotifyFunction(INBleNotifyFunction iNBleNotifyFunction) {
+//            this.nBleDevice.setiNotifyFunction(iNBleNotifyFunction);
+//            return this;
+//        }
+//
+//        public NBleDevice build() {
+//            if (this.nBleDevice.getNotifyFunction() == null) {
+//                // 根据设备名获取notify function
+//                INBleNotifyFunction iNBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
+//                setINotifyFunction(iNBleNotifyFunction);
+//                Timber.d("Builder set iNBleNotifyFunction: %s", iNBleNotifyFunction == null ? "null" : iNBleNotifyFunction.getClass().getName());
+//            }
+//            NBleDeviceManagerImpl.getInstance().add(this.nBleDevice);
+//            return this.nBleDevice;
+//        }
+//    }
 }

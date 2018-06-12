@@ -2,14 +2,19 @@ package com.gangle.nble;
 
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +35,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 记录的devices
      */
     private Map<String, NBleDevice> mDevices = Collections.synchronizedMap(new LinkedHashMap<String, NBleDevice>());
+    private Set<NBleDevice> mMaintainSet = Collections.synchronizedSet(new HashSet<NBleDevice>());
 
     /**
      * 根据不同设备的notification的处理接口的列表，此表是根据设备名来区分。
@@ -80,6 +86,18 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         NBleDeviceManagerImpl.getInstance().restoreDevices(context);
     }
 
+
+    /**
+     * 创建device，INBleNotifyFunction表示后续
+     */
+    public NBleDevice createDevice(String address, String name) {
+        assert getDevice(address) == null : String.format("The device with %s is EXIST!", address);
+        NBleDevice device = new NBleDeviceImpl(NBleDeviceManagerImpl.getInstance().getContext(), address, name);
+        NBleDeviceManagerImpl.getInstance().add(device);
+        return device;
+    }
+
+
     /**
      * 根据address来获取维护的device
      */
@@ -104,7 +122,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         List<NBleDevice> items = new ArrayList<>();
         List<NBleDevice> allDeviceSettingItems = new ArrayList<>(mDevices.values());
         for (NBleDevice device : allDeviceSettingItems) {
-            if (((NBleDeviceImpl) device).isMaintain() == maintain) {
+            if (NBle.getManager().isMaintain(device) == maintain) {
                 items.add(device);
             }
         }
@@ -131,14 +149,25 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     public synchronized boolean isMaintain(String address) {
         NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
-        return device != null && device.isMaintain();
+        return device != null && mMaintainSet.contains(device);
+    }
+
+    /**
+     * 查询某设备是否是维护状态
+     */
+    public synchronized boolean isMaintain(NBleDevice device) {
+        return device != null && mMaintainSet.contains(device);
     }
 
     /**
      * 根据device设置设备的维护状态
      */
-    protected synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
-        device.setMaintain(bMaintain);
+    public synchronized void setMaintain(NBleDevice device, boolean bMaintain) {
+        if (bMaintain) {
+            mMaintainSet.add(device);
+        } else {
+            mMaintainSet.remove(device);
+        }
         NBleDeviceManagerImpl.getInstance().storeDevices();
     }
 
@@ -147,8 +176,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     public synchronized void setMaintain(String address, boolean bMaintain) {
         NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
-        device.setMaintain(bMaintain);
-        NBleDeviceManagerImpl.getInstance().storeDevices();
+        setMaintain(device, bMaintain);
     }
 
     /**
@@ -179,7 +207,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 添加设备
      */
     public synchronized void add(NBleDevice deviceSettingItem, boolean store) {
-        mDevices.put(deviceSettingItem.getAddress(), (NBleDeviceImpl) deviceSettingItem);
+        mDevices.put(deviceSettingItem.getAddress(), deviceSettingItem);
         if (store)
             storeDevices();
     }
@@ -194,7 +222,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     public synchronized void remove(String address) {
         Timber.v("remove Device:%s", address);
         NBleDeviceImpl remove = (NBleDeviceImpl) mDevices.remove(address);
-        if (remove != null && remove.isMaintain()) {
+        if (remove != null && isMaintain(remove)) {
             storeDevices();
         }
     }
@@ -276,8 +304,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         List<String> serializationList = new ArrayList<String>();
         synchronized (mDevices) {
             for (NBleDevice device : mDevices.values()) {
-                if (device.isMaintain()) {
-                    Timber.v("Store Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
+                if (isMaintain(device)) {
+                    Timber.v("Store Device:%s, isMaintain:%s", device.getAddress(), true);
                     // 连接中，或者maintain的设备都要store下来
                     serializationList.add(((NBleDeviceImpl) device).serialize());
                 }
@@ -296,7 +324,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                 for (String serialization : serializationList) {
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
                     add(device);
-                    Timber.v("Restore Device:%s, isMaintain:%s", device.getAddress(), device.isMaintain());
+                    Timber.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
                 }
             }
         }
@@ -319,7 +347,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                 .filter(new Func1<NBleDevice, Boolean>() {
                     @Override
                     public Boolean call(NBleDevice device) {
-                        return NBleUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device.getAddress());
+                        return NBleUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device);
                     }
                 })
                 .delay(2, TimeUnit.SECONDS)

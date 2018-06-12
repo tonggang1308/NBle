@@ -10,6 +10,11 @@ import java.util.List;
 public interface NBleDeviceManager {
 
     /**
+     * 创建device，INBleNotifyFunction表示后续
+     */
+    NBleDevice createDevice(String address, String name);
+
+    /**
      * 根据address来获取维护的device
      */
     NBleDevice getDevice(String address);
@@ -35,6 +40,16 @@ public interface NBleDeviceManager {
      * 查询某address的设备是否是维护状态
      */
     boolean isMaintain(String address);
+
+    /**
+     * 查询某设备是否是维护状态
+     */
+    boolean isMaintain(NBleDevice device);
+
+    /**
+     * 根据device设置设备的维护状态
+     */
+    void setMaintain(NBleDevice device, boolean bMaintain);
 
     /**
      * 设置某address的设备是否是维护状态

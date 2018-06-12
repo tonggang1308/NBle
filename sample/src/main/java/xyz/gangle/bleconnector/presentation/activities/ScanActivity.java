@@ -30,6 +30,7 @@ import android.widget.Toast;
 import com.gangle.nble.DeviceStateEvent;
 import com.gangle.nble.NBle;
 import com.gangle.nble.NBleDevice;
+import com.gangle.nble.NBleDeviceManager;
 import com.gangle.nble.NBleScanner;
 import com.gangle.nble.NBleUtil;
 import com.gangle.nble.ScanFilter.AddressScanFilter;
@@ -498,24 +499,21 @@ public class ScanActivity extends AppCompatActivity
             NBleDevice device = NBle.getManager().getDevice(address);
             switch (item.getItemId()) {
                 case MENU_ITEM_ADD_MAINTAIN:
-                    if (device != null) {
-                        device.setMaintain(true);
-                    } else {
-                        device = new NBle.DeviceBuilder(address, name).setMaintain(true).build();
+                    if (device == null) {
+                        device = NBle.getManager().createDevice(address, name);
                     }
+                    NBle.getManager().setMaintain(device, true);
                     break;
                 case MENU_ITEM_REMOVE_MAINTAIN:
                     if (device != null) {
-                        device.setMaintain(false);
+                        NBle.getManager().setMaintain(device, false);
                     }
                     break;
                 case MENU_ITEM_CONNECT:
                     if (device == null) {
-                        device = new NBle.DeviceBuilder(address, name).build();
+                        device = NBle.getManager().createDevice(address, name);
                     }
-
-                    if (device != null)
-                        device.connect();
+                    device.connect();
                     break;
                 case MENU_ITEM_DISCONNECT:
                     if (device != null) {
@@ -666,8 +664,8 @@ public class ScanActivity extends AppCompatActivity
             boolean ignoreUnknown = getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE);
             if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE)) {
                 String name = getInstance().getFilterName();
-                scanFilterList.add(new NameScanFilter(new String[]{name}, ignoreUnknown , true));
-            }else {
+                scanFilterList.add(new NameScanFilter(new String[]{name}, ignoreUnknown, true));
+            } else {
                 scanFilterList.add(new NameScanFilter(null, ignoreUnknown, true));
             }
 

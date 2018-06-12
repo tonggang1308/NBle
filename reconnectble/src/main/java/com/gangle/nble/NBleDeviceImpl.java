@@ -40,10 +40,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     private BluetoothGatt bleGatt;
     private BluetoothAdapter bluetoothAdapter;
 
-    /**
-     * 是否维护。如果true，表示device在disconnected后，会重新去做connect。
-     */
-    private boolean bMaintain = false;
 
     /**
      * 记录当前device是否在连接中。
@@ -77,21 +73,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return super.getName();
     }
 
-    /**
-     * 判断是否是维护状态
-     */
-    public boolean isMaintain() {
-        return bMaintain;
-    }
-
-    /**
-     * 设置维护状态
-     *
-     * @param maintain
-     */
-    public void setMaintain(boolean maintain) {
-        this.bMaintain = maintain;
-    }
 
     /**
      * 获取device
@@ -203,7 +184,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return this.iNBleNotifyFunction;
     }
 
-    public void setiNotifyFunction(INBleNotifyFunction iNotifyFunction) {
+    public void setINotifyFunction(INBleNotifyFunction iNotifyFunction) {
         this.iNBleNotifyFunction = iNotifyFunction;
     }
 
@@ -349,14 +330,15 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
     @Override
     public String serialize() {
-        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), isMaintain()));
+        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), NBle.getManager().isMaintain(this)));
     }
 
     static public NBleDeviceImpl deserialize(Context context, String json) {
         SerializeBleDeviceInfo deviceInfo = new Gson().fromJson(json, SerializeBleDeviceInfo.class);
         NBleDeviceImpl device = new NBleDeviceImpl(context, deviceInfo.address, deviceInfo.name);
-        if (deviceInfo.maintain != null)
-            device.setMaintain(deviceInfo.maintain);
+        if (deviceInfo.maintain != null) {
+            NBle.getManager().setMaintain(deviceInfo.address, deviceInfo.maintain);
+        }
         return device;
     }
 

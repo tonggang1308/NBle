@@ -85,7 +85,7 @@ public class NBleService extends Service {
         Timber.i("service reconnectAll()");
         if (NBleUtil.isAdapterEnable(this)) {
             for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
-                if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && device.isMaintain()) {
+                if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && NBle.getManager().isMaintain(device)) {
                     device.connect();
                 }
             }
