@@ -44,6 +44,11 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     private INBleNotifyFunction mDefaultSubscription;
 
     /**
+     * 扫描
+     */
+    private NBleScannerImpl scanner;
+
+    /**
      * 禁止外部新建实例
      */
     private NBleDeviceManagerImpl() {
@@ -84,6 +89,17 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
 
 
     /**
+     * 获取scanner
+     */
+    @Override
+    public NBleScanner getScanner() {
+        if (scanner == null) {
+            scanner = new NBleScannerImpl(context);
+        }
+        return scanner;
+    }
+
+    /**
      * 创建device，INBleNotifyFunction表示后续
      */
     public NBleDevice createDevice(String address, String name) {
@@ -110,15 +126,13 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     /**
-     * 获取所有设备
-     *
-     * @param maintain 是否是维护状态的
+     * 获取所有被维护的设备
      */
-    public List<NBleDevice> getAllDevices(boolean maintain) {
+    public List<NBleDevice> getMaintainedDevices() {
         List<NBleDevice> items = new ArrayList<>();
         List<NBleDevice> allDeviceSettingItems = new ArrayList<>(mDevices.values());
         for (NBleDevice device : allDeviceSettingItems) {
-            if (NBle.getManager().isMaintain(device) == maintain) {
+            if (NBle.manager().isMaintain(device)) {
                 items.add(device);
             }
         }

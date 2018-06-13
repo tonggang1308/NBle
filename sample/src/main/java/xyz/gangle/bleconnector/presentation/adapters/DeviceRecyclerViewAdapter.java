@@ -51,7 +51,7 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
         }
         holder.textViewState.setText(holder.mItem.getStatusString());
 
-        boolean isMaintain = NBle.getManager().isMaintain(holder.mItem.getAddress());
+        boolean isMaintain = NBle.manager().isMaintain(holder.mItem.getAddress());
         holder.viewMaintain.setVisibility(isMaintain ? View.VISIBLE : View.GONE);
 
         holder.mView.setTag(holder.mItem);

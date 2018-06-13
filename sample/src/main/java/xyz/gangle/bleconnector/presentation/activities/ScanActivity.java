@@ -99,7 +99,7 @@ public class ScanActivity extends AppCompatActivity
     private DeviceInfo selectedDeviceInfo;
 
     private List<DeviceInfo> devList = Collections.synchronizedList(new ArrayList<DeviceInfo>());
-    private NBleScanner scanner;
+    private NBleScanner scanner = NBle.manager().getScanner();
     private int scanDuration = NBleScanner.INDEFINITE;
     private Snackbar snackbar;
     private Timer countDownTimer;
@@ -130,9 +130,6 @@ public class ScanActivity extends AppCompatActivity
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
         recyclerView.setAdapter(new DeviceRecyclerViewAdapter(devList, this));
-
-        // 创建scanner
-        scanner = new NBle.ScannerBuilder(this).build();
 
         // 设置 scan filter
         updateFilter();
@@ -496,22 +493,22 @@ public class ScanActivity extends AppCompatActivity
         if (selectedDeviceInfo != null) {
             String address = selectedDeviceInfo.getAddress();
             String name = selectedDeviceInfo.getName();
-            NBleDevice device = NBle.getManager().getDevice(address);
+            NBleDevice device = NBle.manager().getDevice(address);
             switch (item.getItemId()) {
                 case MENU_ITEM_ADD_MAINTAIN:
                     if (device == null) {
-                        device = NBle.getManager().createDevice(address, name);
+                        device = NBle.manager().createDevice(address, name);
                     }
-                    NBle.getManager().setMaintain(device, true);
+                    NBle.manager().setMaintain(device, true);
                     break;
                 case MENU_ITEM_REMOVE_MAINTAIN:
                     if (device != null) {
-                        NBle.getManager().setMaintain(device, false);
+                        NBle.manager().setMaintain(device, false);
                     }
                     break;
                 case MENU_ITEM_CONNECT:
                     if (device == null) {
-                        device = NBle.getManager().createDevice(address, name);
+                        device = NBle.manager().createDevice(address, name);
                     }
                     device.connect();
                     break;
@@ -550,7 +547,7 @@ public class ScanActivity extends AppCompatActivity
     }
 
     protected void addMaintainDevicesInfo() {
-        for (NBleDevice device : NBle.getManager().getAllDevices()) {
+        for (NBleDevice device : NBle.manager().getAllDevices()) {
             DeviceInfo info = getDeviceInfo(device.getAddress());
             if (info == null) {
                 int state = device.getConnectionState();
@@ -585,12 +582,12 @@ public class ScanActivity extends AppCompatActivity
         Toast.makeText(ScanActivity.this, info.getStatusString(), Toast.LENGTH_SHORT).show();
 
 
-        if (!NBle.getManager().isMaintain(info.getAddress()))
+        if (!NBle.manager().isMaintain(info.getAddress()))
             menu.add(0, MENU_ITEM_ADD_MAINTAIN, 0, "add to Maintain list");
         else
             menu.add(0, MENU_ITEM_REMOVE_MAINTAIN, 0, "remove from Maintain list");
 
-        NBleDevice device = NBle.getManager().getDevice(info.getAddress());
+        NBleDevice device = NBle.manager().getDevice(info.getAddress());
         if (device == null) {
             menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
         } else if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {

@@ -10,7 +10,12 @@ import java.util.List;
 public interface NBleDeviceManager {
 
     /**
-     * 创建device，INBleNotifyFunction表示后续
+     * 获取scanner
+     */
+    NBleScanner getScanner();
+
+    /**
+     * 创建device
      */
     NBleDevice createDevice(String address, String name);
 
@@ -25,11 +30,9 @@ public interface NBleDeviceManager {
     List<NBleDevice> getAllDevices();
 
     /**
-     * 获取所有设备
-     *
-     * @param maintain 是否是维护状态的
+     * 获取所有被维护的设备
      */
-    List<NBleDevice> getAllDevices(boolean maintain);
+    List<NBleDevice> getMaintainedDevices();
 
     /**
      * 获取所有已连接的设备

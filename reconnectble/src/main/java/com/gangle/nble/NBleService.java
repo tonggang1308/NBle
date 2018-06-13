@@ -83,7 +83,7 @@ public class NBleService extends Service {
         LogUtils.i("service reconnectAll()");
         if (NBleUtil.isAdapterEnable(this)) {
             for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
-                if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && NBle.getManager().isMaintain(device)) {
+                if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && NBle.manager().isMaintain(device)) {
                     device.connect();
                 }
             }

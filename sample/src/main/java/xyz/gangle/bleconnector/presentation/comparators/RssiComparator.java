@@ -15,8 +15,8 @@ public class RssiComparator implements Comparator<DeviceInfo> {
     @Override
     public int compare(DeviceInfo itemBean1, DeviceInfo itemBean2) {
         // 处于维护状态的排在前列
-        boolean isMaintain1 = NBle.getManager().isMaintain(itemBean1.getAddress());
-        boolean isMaintain2 = NBle.getManager().isMaintain(itemBean2.getAddress());
+        boolean isMaintain1 = NBle.manager().isMaintain(itemBean1.getAddress());
+        boolean isMaintain2 = NBle.manager().isMaintain(itemBean2.getAddress());
         if (isMaintain1 && isMaintain2) {
             return 0;
         } else if (isMaintain1) {

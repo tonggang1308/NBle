@@ -29,7 +29,7 @@ public class ConnectorApplication extends Application {
         NBle.init(this);
 
         // 注册响应
-        NBle.getManager().registerDefaultNotification(new BaseBleNotifyFunction());
+        NBle.manager().registerDefaultNotification(new BaseBleNotifyFunction());
 
         // 初始化存储
         SharedPrefManager.getInstance().init(this);

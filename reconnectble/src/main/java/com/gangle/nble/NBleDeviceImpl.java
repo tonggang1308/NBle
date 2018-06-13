@@ -80,7 +80,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return this.bleGatt.getDevice();
     }
 
-    private NBleDeviceManagerImpl getManager() {
+    private NBleDeviceManagerImpl manager() {
         return NBleDeviceManagerImpl.getInstance();
     }
 
@@ -89,7 +89,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public void write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-        getManager().writeCharacteristic(getAddress(), serviceUuid, characteristicUuid, data);
+        manager().writeCharacteristic(getAddress(), serviceUuid, characteristicUuid, data);
     }
 
     public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
@@ -116,7 +116,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             }
         }
         if (!retValue) {
-            getManager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
+            manager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
         }
 
         return retValue;
@@ -127,7 +127,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public void read(UUID serviceUuid, UUID characteristicUuid) {
-        getManager().readCharacteristic(getAddress(), serviceUuid, characteristicUuid);
+        manager().readCharacteristic(getAddress(), serviceUuid, characteristicUuid);
     }
 
     public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
@@ -162,7 +162,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         }
 
         if (!retValue) {
-            getManager().onReadCharacteristic(getAddress(), characteristicUuid, null);
+            manager().onReadCharacteristic(getAddress(), characteristicUuid, null);
         }
         return retValue;
     }
@@ -236,7 +236,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     @Override
     public synchronized void disconnect() {
-        getManager().disconnect(this);
+        manager().disconnect(this);
     }
 
     /**
@@ -264,7 +264,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
-        return getManager().connectDirectly(this);
+        return manager().connectDirectly(this);
     }
 
     /**
@@ -329,14 +329,14 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
     @Override
     public String serialize() {
-        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), NBle.getManager().isMaintain(this)));
+        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), NBle.manager().isMaintain(this)));
     }
 
     static public NBleDeviceImpl deserialize(Context context, String json) {
         SerializeBleDeviceInfo deviceInfo = new Gson().fromJson(json, SerializeBleDeviceInfo.class);
         NBleDeviceImpl device = new NBleDeviceImpl(context, deviceInfo.address, deviceInfo.name);
         if (deviceInfo.maintain != null) {
-            NBle.getManager().setMaintain(deviceInfo.address, deviceInfo.maintain);
+            NBle.manager().setMaintain(deviceInfo.address, deviceInfo.maintain);
         }
         return device;
     }
@@ -410,7 +410,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                             iNBleNotifyFunction.onDisconnected(context, gatt.getDevice().getAddress());
                         }
 
-                        if (bluetoothAdapter.isEnabled() && getManager().isMaintain(address)) {
+                        if (bluetoothAdapter.isEnabled() && manager().isMaintain(address)) {
                             LogUtils.d("Device " + address + " is in maintain list");
                             if (status == BluetoothGatt.GATT_SUCCESS) {
                                 LogUtils.i(address + " gatt.connectImpl()");
@@ -441,7 +441,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 }
             } catch (ConnectException e) {
 
-                getManager().onConnectException(NBleDeviceImpl.this, status);
+                manager().onConnectException(NBleDeviceImpl.this, status);
             }
         }
 
@@ -471,13 +471,13 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             }
             LogUtils.i("read: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " Status: " + status);
 
-            getManager().onReadCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
+            manager().onReadCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             LogUtils.d("Write confirm: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " status: " + status);
-            getManager().onWriteCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
+            manager().onWriteCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override

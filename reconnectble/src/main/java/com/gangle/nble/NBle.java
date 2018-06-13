@@ -11,7 +11,7 @@ public final class NBle {
     private NBle() {
     }
 
-    static public NBleDeviceManager getManager() {
+    static public NBleDeviceManager manager() {
         return NBleDeviceManagerImpl.getInstance();
     }
 
@@ -30,25 +30,7 @@ public final class NBle {
 
     }
 
-    /**
-     * BLE Scanner Builder
-     */
-    public static class ScannerBuilder {
-        NBleScannerImpl nBleScanner;
 
-        public ScannerBuilder(Context context) {
-            nBleScanner = new NBleScannerImpl(context);
-        }
-
-        public ScannerBuilder setUuids(UUID[] uuids) {
-            nBleScanner.setUuids(uuids);
-            return this;
-        }
-
-        public NBleScanner build() {
-            return nBleScanner;
-        }
-    }
 
 //    /**
 //     * BLE Device Builder
