@@ -2,11 +2,7 @@ package com.gangle.nble;
 
 import android.content.Context;
 
-import com.gangle.nble.ifunction.INBleNotifyFunction;
-
 import java.util.UUID;
-
-import timber.log.Timber;
 
 /**
  * Created by Gang Tong
@@ -82,7 +78,7 @@ public final class NBle {
 //                // 根据设备名获取notify function
 //                INBleNotifyFunction iNBleNotifyFunction = NBleDeviceManagerImpl.getInstance().getNotification(nBleDevice.getName());
 //                setINotifyFunction(iNBleNotifyFunction);
-//                Timber.d("Builder set iNBleNotifyFunction: %s", iNBleNotifyFunction == null ? "null" : iNBleNotifyFunction.getClass().getName());
+//                LogUtils.d("Builder set iNBleNotifyFunction: %s", iNBleNotifyFunction == null ? "null" : iNBleNotifyFunction.getClass().getName());
 //            }
 //            NBleDeviceManagerImpl.getInstance().add(this.nBleDevice);
 //            return this.nBleDevice;

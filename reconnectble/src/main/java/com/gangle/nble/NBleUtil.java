@@ -10,8 +10,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.provider.Settings;
 
-import timber.log.Timber;
-
 /**
  * Created by Gang Tong.
  */
@@ -109,7 +107,7 @@ public final class NBleUtil {
             }
 
             if (!bluetoothAdapter.isEnabled()) {
-                Timber.v("bluetoothAdapter DISABLE!");
+                LogUtils.v("bluetoothAdapter DISABLE!");
             }
             return bluetoothAdapter.isEnabled();
         } else {

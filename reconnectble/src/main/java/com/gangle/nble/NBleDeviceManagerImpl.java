@@ -2,15 +2,12 @@ package com.gangle.nble;
 
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.support.annotation.NonNull;
 
 import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +19,6 @@ import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
-import timber.log.Timber;
 
 /**
  * Created by Gang Tong
@@ -220,7 +216,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 删除设备
      */
     public synchronized void remove(String address) {
-        Timber.v("remove Device:%s", address);
+        LogUtils.v("remove Device:%s", address);
         NBleDeviceImpl remove = (NBleDeviceImpl) mDevices.remove(address);
         if (remove != null && isMaintain(remove)) {
             storeDevices();
@@ -291,7 +287,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                     OperationManager.getInstance().done(operation);
                 }
             } else {
-                Timber.w("currentOperation != null");
+                LogUtils.w("currentOperation != null");
             }
         }
     }
@@ -300,12 +296,12 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 序列化设备。只序列化设为“维护”的设备。
      */
     public void storeDevices() {
-        Timber.v("Store Device size:%d", mDevices.size());
+        LogUtils.v("Store Device size:%d", mDevices.size());
         List<String> serializationList = new ArrayList<String>();
         synchronized (mDevices) {
             for (NBleDevice device : mDevices.values()) {
                 if (isMaintain(device)) {
-                    Timber.v("Store Device:%s, isMaintain:%s", device.getAddress(), true);
+                    LogUtils.v("Store Device:%s, isMaintain:%s", device.getAddress(), true);
                     // 连接中，或者maintain的设备都要store下来
                     serializationList.add(((NBleDeviceImpl) device).serialize());
                 }
@@ -324,7 +320,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                 for (String serialization : serializationList) {
                     NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
                     add(device);
-                    Timber.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
+                    LogUtils.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
                 }
             }
         }

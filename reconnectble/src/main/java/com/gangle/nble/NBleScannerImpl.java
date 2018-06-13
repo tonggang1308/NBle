@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import timber.log.Timber;
-
 
 
 @TargetApi(21)
@@ -62,7 +60,7 @@ class NBleScannerImpl implements NBleScanner {
                 public void onBatchScanResults(List<ScanResult> results) {
                     super.onBatchScanResults(results);
 
-                    Timber.d("onBatchScanResults, size:%d", results.size());
+                    LogUtils.d(String.format("onBatchScanResults, size:%d", results.size()));
 
                 }
 
@@ -70,7 +68,7 @@ class NBleScannerImpl implements NBleScanner {
                 public void onScanFailed(int errorCode) {
                     super.onScanFailed(errorCode);
                     stop();
-                    Timber.d("onScanFailed, errorCode:%d", errorCode);
+                    LogUtils.d(String.format("onScanFailed, errorCode:%d", errorCode));
                 }
             };
         }
@@ -80,13 +78,13 @@ class NBleScannerImpl implements NBleScanner {
 
     protected void processScanResult(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
         if (mScanListener == null) {
-            Timber.e("Callback not set!");
+            LogUtils.e("Callback not set!");
             return;
         }
 
         // whether device is exist
         if (!addressList.contains(device.getAddress())) {
-            Timber.v("ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
+            LogUtils.v(String.format("ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
             addressList.add(device.getAddress());
         }
 
@@ -94,13 +92,13 @@ class NBleScannerImpl implements NBleScanner {
         if (scanFilters != null && scanFilters.length > 0) {
             for (IScanFilter filter : scanFilters) {
                 if (filter.isMatch(device, rssi)) {
-                    Timber.v("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
+                    LogUtils.v(String.format("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
                     mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
                     return;
                 }
             }
         } else {
-            Timber.v("NO MATCH FILTER!");
+            LogUtils.v("NO MATCH FILTER!");
             mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
             return;
         }
@@ -129,7 +127,7 @@ class NBleScannerImpl implements NBleScanner {
 
     private synchronized boolean start(UUID[] serviceUuids, BleScanListener listener, long duration) {
         if (listener == null) {
-            Timber.e("Null call back, refuse to scan!");
+            LogUtils.e("Null call back, refuse to scan!");
             return false;
         }
 
@@ -139,7 +137,7 @@ class NBleScannerImpl implements NBleScanner {
 
             // 目前有手机是api 18以上，但getAdapter()有时返回的是null。
             if (mAdapter == null) {
-                Timber.e("Blue Adapter is Null!");
+                LogUtils.e("Blue Adapter is Null!");
                 return false;
             }
         }
@@ -151,7 +149,7 @@ class NBleScannerImpl implements NBleScanner {
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 if (!mAdapter.startLeScan(serviceUuids, mLeScanCallback)) {
-                    Timber.e("ble_scan_fail, startLeScan return false!");
+                    LogUtils.e("ble_scan_fail, startLeScan return false!");
                     return false;
                 }
             } else {
@@ -159,7 +157,7 @@ class NBleScannerImpl implements NBleScanner {
                 if (scanner != null) {
                     scanner.startScan(m21Scancalback);
                 } else {
-                    Timber.e("ble_scan_fail, getBluetoothLeScanner return null!");
+                    LogUtils.e("ble_scan_fail, getBluetoothLeScanner return null!");
                     return false;
                 }
             }

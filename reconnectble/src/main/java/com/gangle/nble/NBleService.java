@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 
-import timber.log.Timber;
-
 /**
  * Created by Gang Tong.
  */
@@ -41,7 +39,7 @@ public class NBleService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Timber.i("onCreate, first start NBleService");
+        LogUtils.i("onCreate, first start NBleService");
 
         // 第一次启动，恢复‘维护设备列表’。
         if (NBleUtil.isAdapterEnable(this)) {
@@ -54,7 +52,7 @@ public class NBleService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Timber.i("onStartCommand, flags:%d, startId:%d, reason:%s", flags, startId, intent == null ? " Restart after be Removed." : intent.getIntExtra(ACTION_REASON, REASON_NORMAL));
+        LogUtils.i("onStartCommand, flags:%d, startId:%d, reason:%s", flags, startId, intent == null ? " Restart after be Removed." : intent.getIntExtra(ACTION_REASON, REASON_NORMAL));
 
         if (intent != null) {
             switch (intent.getIntExtra(ACTION_REASON, REASON_NORMAL)) {
@@ -75,14 +73,14 @@ public class NBleService extends Service {
     }
 
     private void closeAll() {
-        Timber.i("service closeAll()");
+        LogUtils.i("service closeAll()");
         for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
             device.disconnect();
         }
     }
 
     private void reconnectAll() {
-        Timber.i("service reconnectAll()");
+        LogUtils.i("service reconnectAll()");
         if (NBleUtil.isAdapterEnable(this)) {
             for (NBleDevice device : NBleDeviceManagerImpl.getInstance().getAllDevices()) {
                 if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED && NBle.getManager().isMaintain(device)) {
@@ -95,13 +93,13 @@ public class NBleService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Timber.w("onDestroy()");
+        LogUtils.w("onDestroy()");
     }
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
-        Timber.w("onTaskRemoved()");
+        LogUtils.w("onTaskRemoved()");
     }
 
     @Override
