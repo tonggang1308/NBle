@@ -14,8 +14,9 @@ import android.content.Context;
 import com.gangle.nble.Record.StatusChangeRecord;
 import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
-import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,6 +83,25 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
     private NBleDeviceManagerImpl manager() {
         return NBleDeviceManagerImpl.getInstance();
+    }
+
+    /**
+     * 调试用。主要是记录device的各个连接事件。便于回溯历史。
+     */
+    private List<StatusChangeRecord> statusRecordList = Collections.synchronizedList(new ArrayList<StatusChangeRecord>());
+
+    /**
+     * 获取状态记录
+     */
+    public List<StatusChangeRecord> getStatusRecordList() {
+        return new ArrayList<>(statusRecordList);
+    }
+
+    /**
+     * 记录状态
+     */
+    protected void recordStatus(int status) {
+        statusRecordList.add(new StatusChangeRecord(status));
     }
 
     /**
@@ -327,19 +347,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return true;
     }
 
-    @Override
-    public String serialize() {
-        return new Gson().toJson(new SerializeBleDeviceInfo(getAddress(), getName(), NBle.manager().isMaintain(this)));
-    }
-
-    static public NBleDeviceImpl deserialize(Context context, String json) {
-        SerializeBleDeviceInfo deviceInfo = new Gson().fromJson(json, SerializeBleDeviceInfo.class);
-        NBleDeviceImpl device = new NBleDeviceImpl(context, deviceInfo.address, deviceInfo.name);
-        if (deviceInfo.maintain != null) {
-            NBle.manager().setMaintain(deviceInfo.address, deviceInfo.maintain);
-        }
-        return device;
-    }
 
     /**
      * close
@@ -530,21 +537,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             LogUtils.d(gatt.getDevice().getAddress() + " mtu: " + mtu + " status: " + status);
         }
     };
-
-    private class SerializeBleDeviceInfo {
-        /**
-         * 序列化字段
-         */
-        public String address;
-        public String name;
-        public Boolean maintain;
-
-        public SerializeBleDeviceInfo(String address, String name, boolean maintain) {
-            this.address = address;
-            this.name = name;
-            this.maintain = maintain;
-        }
-    }
 
     private class ConnectException extends Exception {
     }

@@ -8,16 +8,21 @@ import java.util.UUID;
  * Created by Gang Tong
  */
 public final class NBle {
+    /**
+     * 扫描
+     */
+    static private NBleScannerImpl scanner;
+
     private NBle() {
     }
 
-    static public NBleDeviceManager manager() {
-        return NBleDeviceManagerImpl.getInstance();
+    static public void init(Context context) {
+        init(context);
     }
 
-    static public void init(Context context) {
+    static public void init(Context context, NBlePreference.DeviceSerialization serialization) {
         // BLE Share Preference
-        NBlePreference.init(context);
+        NBlePreference.init(context, serialization);
 
         // BLE Manager
         NBleDeviceManagerImpl.getInstance().init(context);
@@ -28,8 +33,30 @@ public final class NBle {
         // Operation Manager
         OperationManager.getInstance().init(NBleDeviceManagerImpl.getInstance());
 
+        // Scanner
+        scanner = new NBleScannerImpl(context);
     }
 
+    static public NBleDeviceManager manager() {
+        return NBleDeviceManagerImpl.getInstance();
+    }
+
+    static public NBlePreference getPreference() {
+        return NBlePreference.getInstance();
+    }
+
+
+    /**
+     * 获取scanner
+     */
+    static public NBleScanner getScanner() {
+        return scanner;
+    }
+
+
+//    interface NBleSerializeInterface {
+//        NBleDevice onDeviceCreate();
+//    }
 
 
 //    /**

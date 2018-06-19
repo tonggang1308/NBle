@@ -3,6 +3,7 @@ package xyz.gangle.bleconnector.preference;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.gangle.nble.device.DeviceBase;
 import com.gangle.util.PreferenceUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -60,6 +61,11 @@ public class SharedPrefManager {
      * sort show order
      */
     public static final String KEY_SORT_ORDER = "KEY_SORT_ORDER";
+
+    /**
+     * device serialization
+     */
+    public static final String SERIALIZATION_LIST = "SERIALIZATION_LIST";
 
 
     private SharedPrefManager() {
@@ -167,13 +173,26 @@ public class SharedPrefManager {
     public List<SortItemInfo> getSortOrder() {
         String json = PreferenceUtil.readString(sharedPreferences, KEY_SORT_ORDER);
 
-        List<SortItemInfo> list = new Gson().fromJson(json, new TypeToken<ArrayList<SortItemInfo>>(){}.getType());
+        List<SortItemInfo> list = new Gson().fromJson(json, new TypeToken<ArrayList<SortItemInfo>>() {
+        }.getType());
         return list;
     }
 
     public void setSortOrder(List<SortItemInfo> list) {
         String json = new Gson().toJson(list);
         PreferenceUtil.write(sharedPreferences, KEY_SORT_ORDER, json);
+    }
+
+    public void saveSerialization(List<DeviceBase> list) {
+        String json = new Gson().toJson(list);
+        PreferenceUtil.write(sharedPreferences, SERIALIZATION_LIST, json);
+    }
+
+    public List<DeviceBase> restoreSerialization() {
+        String serializations = PreferenceUtil.readString(sharedPreferences, SERIALIZATION_LIST);
+        List<DeviceBase> list = new Gson().fromJson(serializations, new TypeToken<List<DeviceBase>>() {
+        }.getType());
+        return list;
     }
 
 }

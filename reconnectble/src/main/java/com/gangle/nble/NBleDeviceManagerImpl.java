@@ -3,6 +3,7 @@ package com.gangle.nble;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
+import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
 
 import java.util.ArrayList;
@@ -44,11 +45,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     private INBleNotifyFunction mDefaultSubscription;
 
     /**
-     * 扫描
-     */
-    private NBleScannerImpl scanner;
-
-    /**
      * 禁止外部新建实例
      */
     private NBleDeviceManagerImpl() {
@@ -85,18 +81,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
 
         // 第一次启动，恢复‘维护设备列表’。
         NBleDeviceManagerImpl.getInstance().restoreDevices(context);
-    }
-
-
-    /**
-     * 获取scanner
-     */
-    @Override
-    public NBleScanner getScanner() {
-        if (scanner == null) {
-            scanner = new NBleScannerImpl(context);
-        }
-        return scanner;
     }
 
     /**
@@ -223,7 +207,7 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     public synchronized void add(NBleDevice deviceSettingItem) {
-        add(deviceSettingItem, true);
+        add(deviceSettingItem, false);
     }
 
     /**
@@ -310,31 +294,32 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 序列化设备。只序列化设为“维护”的设备。
      */
     public void storeDevices() {
-        LogUtils.v("Store Device size:%d", mDevices.size());
-        List<String> serializationList = new ArrayList<String>();
-        synchronized (mDevices) {
-            for (NBleDevice device : mDevices.values()) {
-                if (isMaintain(device)) {
-                    LogUtils.v("Store Device:%s, isMaintain:%s", device.getAddress(), true);
-                    // 连接中，或者maintain的设备都要store下来
-                    serializationList.add(((NBleDeviceImpl) device).serialize());
-                }
+        LogUtils.v("Store Device size:%d", mMaintainSet.size());
+        synchronized (mMaintainSet) {
+            List<DeviceBase> list = new ArrayList<>();
+            for (NBleDevice device : mMaintainSet) {
+                list.add((DeviceBase) device);
             }
+            NBlePreference.getInstance().saveSerialization(list);
         }
-        NBlePreference.saveSerialization(serializationList);
     }
 
     /**
      * 反序列化设备
      */
     public void restoreDevices(Context context) {
-        List<String> serializationList = NBlePreference.restoreSerialization();
+        List<DeviceBase> serializationList = NBlePreference.getInstance().restoreSerialization();
         if (serializationList != null) {
             synchronized (mDevices) {
-                for (String serialization : serializationList) {
-                    NBleDeviceImpl device = NBleDeviceImpl.deserialize(context, serialization);
-                    add(device);
-                    LogUtils.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
+                for (DeviceBase deviceBase : serializationList) {
+                    if (getDevice(deviceBase.getAddress()) == null) {
+                        NBleDeviceImpl device = new NBleDeviceImpl(context, deviceBase.getAddress(), deviceBase.getName());
+                        add(device);
+                        setMaintain(device, true);
+                        LogUtils.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
+                    }else {
+                        setMaintain(deviceBase.getAddress(), true);
+                    }
                 }
             }
         }

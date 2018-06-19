@@ -99,7 +99,7 @@ public class ScanActivity extends AppCompatActivity
     private DeviceInfo selectedDeviceInfo;
 
     private List<DeviceInfo> devList = Collections.synchronizedList(new ArrayList<DeviceInfo>());
-    private NBleScanner scanner = NBle.manager().getScanner();
+    private NBleScanner scanner = NBle.getScanner();
     private int scanDuration = NBleScanner.INDEFINITE;
     private Snackbar snackbar;
     private Timer countDownTimer;

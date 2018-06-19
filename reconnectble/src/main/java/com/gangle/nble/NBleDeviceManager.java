@@ -10,11 +10,6 @@ import java.util.List;
 public interface NBleDeviceManager {
 
     /**
-     * 获取scanner
-     */
-    NBleScanner getScanner();
-
-    /**
      * 创建device
      */
     NBleDevice createDevice(String address, String name);

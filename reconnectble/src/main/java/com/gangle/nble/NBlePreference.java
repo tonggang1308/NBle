@@ -3,17 +3,22 @@ package com.gangle.nble;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.gangle.nble.ScanFilter.IScanFilter;
+import com.gangle.nble.device.DeviceBase;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-class NBlePreference {
+public class NBlePreference {
 
     private static final String PREFERENCE_SHARE = "preference.tggg.share";
     private static final String SERIALIZATION_LIST = "tggg.communication.storage.Preference.SERIALIZATION_LIST";
     private static Context mContext;
     public static SharedPreferences mPreferences;
+    private static DeviceSerialization mSerialization;
 
     private NBlePreference() {
     }
@@ -26,26 +31,37 @@ class NBlePreference {
         return LazyHolder.INSTANCE;
     }
 
-    public static void init(Context context) {
+    static void init(Context context, DeviceSerialization serialization) {
         mContext = context;
         mPreferences = mContext.getSharedPreferences(PREFERENCE_SHARE, Context.MODE_MULTI_PROCESS);
+        mSerialization = serialization;
     }
 
-    public void cleanPreference() {
+    void cleanPreference() {
         mPreferences.edit().clear().commit();
     }
 
-    public static void saveSerialization(List<String> list) {
-        String json = new Gson().toJson(list);
-        mPreferences.edit().putString(SERIALIZATION_LIST, json).commit();
+    void saveSerialization(List<DeviceBase> list) {
+        if (mSerialization != null) {
+            List<DeviceBase> serialList = Collections.synchronizedList(new ArrayList<DeviceBase>());
+            for (DeviceBase device : list) {
+                serialList.add(new DeviceBase(device.getAddress(), device.getName()));
+            }
+            mSerialization.saveSerialization(serialList);
+        }
     }
 
-    public static List<String> restoreSerialization() {
-        String serializations = mPreferences.getString(SERIALIZATION_LIST, "");
-        List<String> list = new Gson().fromJson(serializations, new TypeToken<List<String>>() {
-        }.getType());
-        return list;
+    List<DeviceBase> restoreSerialization() {
+        if (mSerialization != null)
+            return mSerialization.restoreSerialization();
+        else
+            return null;
     }
 
+    public interface DeviceSerialization {
+        void saveSerialization(List<DeviceBase> list);
+
+        List<DeviceBase> restoreSerialization();
+    }
 
 }

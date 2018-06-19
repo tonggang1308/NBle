@@ -200,6 +200,8 @@ class NBleScannerImpl implements NBleScanner {
             if (mScanListener != null) {
                 mScanListener.onScanStopped();
             }
+
+            addressList.clear();
         }
         mScanListener = null;
     }
