@@ -1,58 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/default_background_color"
+    android:fitsSystemWindows="true"
+    android:padding="10dp">
 
-    <LinearLayout
+    <android.support.v7.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        app:contentPaddingBottom="@dimen/size_big"
+        app:contentPaddingLeft="@dimen/size_very_huge"
+        app:contentPaddingRight="@dimen/size_very_huge"
+        app:contentPaddingTop="@dimen/size_big">
 
-        <RelativeLayout
-            android:id="@+id/rl_continuous"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tv_continuous"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="Continuous Scan" />
+            <RelativeLayout
+                android:id="@+id/rl_continuous"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/setting_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
 
-            <Switch
-                android:id="@+id/switch_scan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
+                <TextView
+                    android:id="@+id/tv_continuous"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Continuous Scan" />
 
-        <RelativeLayout
-            android:id="@+id/rl_manual"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/setting_item_height"
-            android:paddingLeft="@dimen/size_big"
-            android:paddingRight="@dimen/size_big">
+                <Switch
+                    android:id="@+id/switch_scan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
 
-            <TextView
-                android:id="@+id/tv_manual"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="Manual Scan" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#ccc" />
 
-            <TextView
-                android:id="@+id/tv_period"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                tools:text="3s" />
-        </RelativeLayout>
-    </LinearLayout>
+            <RelativeLayout
+                android:id="@+id/rl_manual"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/setting_item_height"
+                android:paddingLeft="@dimen/size_tiny"
+                android:paddingRight="@dimen/size_tiny">
 
+                <TextView
+                    android:id="@+id/tv_manual"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Manual Scan" />
+
+                <TextView
+                    android:id="@+id/tv_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    tools:text="3s" />
+            </RelativeLayout>
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
 </RelativeLayout>

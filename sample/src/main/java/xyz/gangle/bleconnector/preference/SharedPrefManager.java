@@ -3,7 +3,15 @@ package xyz.gangle.bleconnector.preference;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.tggg.util.PreferenceUtil;
+import com.gangle.nble.device.DeviceBase;
+import com.gangle.util.PreferenceUtil;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import xyz.gangle.bleconnector.data.SortItemInfo;
 
 
 public class SharedPrefManager {
@@ -44,6 +52,22 @@ public class SharedPrefManager {
     public static final String KEY_FILTER_RSSI_ENABLE = "KEY_FILTER_RSSI_ENABLE";
     public static final String KEY_FILTER_RSSI_VALUE = "KEY_FILTER_RSSI_VALUE";
 
+    /**
+     * filter NA DEVICE
+     */
+    public static final String KEY_FILTER_UNKNOWN_DEVICE_ENABLE = "KEY_FILTER_UNKNOWN_DEVICE_ENABLE";
+
+    /**
+     * sort show order
+     */
+    public static final String KEY_SORT_ORDER = "KEY_SORT_ORDER";
+
+    /**
+     * device serialization
+     */
+    public static final String SERIALIZATION_LIST = "SERIALIZATION_LIST";
+
+
     private SharedPrefManager() {
     }
 
@@ -74,7 +98,7 @@ public class SharedPrefManager {
      * 扫描时间
      */
     public int getScanDuration() {
-        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_DURATION, 1);
+        return PreferenceUtil.readInt(sharedPreferences, KEY_SCAN_DURATION, 6);
     }
 
     public void setScanDuration(int duration) {
@@ -144,6 +168,31 @@ public class SharedPrefManager {
 
     public void setFilterRssi(int rssi) {
         PreferenceUtil.write(sharedPreferences, KEY_FILTER_RSSI_VALUE, rssi);
+    }
+
+    public List<SortItemInfo> getSortOrder() {
+        String json = PreferenceUtil.readString(sharedPreferences, KEY_SORT_ORDER);
+
+        List<SortItemInfo> list = new Gson().fromJson(json, new TypeToken<ArrayList<SortItemInfo>>() {
+        }.getType());
+        return list;
+    }
+
+    public void setSortOrder(List<SortItemInfo> list) {
+        String json = new Gson().toJson(list);
+        PreferenceUtil.write(sharedPreferences, KEY_SORT_ORDER, json);
+    }
+
+    public void saveSerialization(List<DeviceBase> list) {
+        String json = new Gson().toJson(list);
+        PreferenceUtil.write(sharedPreferences, SERIALIZATION_LIST, json);
+    }
+
+    public List<DeviceBase> restoreSerialization() {
+        String serializations = PreferenceUtil.readString(sharedPreferences, SERIALIZATION_LIST);
+        List<DeviceBase> list = new Gson().fromJson(serializations, new TypeToken<List<DeviceBase>>() {
+        }.getType());
+        return list;
     }
 
 }

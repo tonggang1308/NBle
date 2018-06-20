@@ -1,5 +1,6 @@
 package xyz.gangle.bleconnector.presentation.adapters;
 
+import android.bluetooth.BluetoothProfile;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
@@ -8,21 +9,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.tggg.nble.NBle;
+import com.gangle.nble.NBle;
+import com.gangle.nble.NBleDevice;
+import com.gangle.nble.NBleUtil;
 
 import java.util.List;
 
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
-import xyz.gangle.bleconnector.data.DeviceInfo;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
 
 public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecyclerViewAdapter.ViewHolder> {
 
-    private final List<DeviceInfo> mValues;
+    private final List<NBleDevice> mValues;
     private final OnListInteractionListener mListener;
 
-    public DeviceRecyclerViewAdapter(List<DeviceInfo> items, OnListInteractionListener listener) {
+    public DeviceRecyclerViewAdapter(List<NBleDevice> items, OnListInteractionListener listener) {
         mValues = items;
         mListener = listener;
     }
@@ -37,21 +39,21 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.mItem = mValues.get(position);
-        holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "Unknow Device" : holder.mItem.getName());
+        holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "N/A" : holder.mItem.getName());
         holder.textViewAddress.setText(holder.mItem.getAddress());
-        holder.textViewRssi.setText(holder.mItem.getRssiString());
-        if (holder.mItem.getStatus() == DeviceInfo.DISCONNECTED) {
+        holder.textViewRssi.setText(NBleUtil.rssiToString(holder.mItem.getRssi()));
+        if (holder.mItem.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
-        } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTING) {
+        } else if (holder.mItem.getConnectionState() == BluetoothProfile.STATE_CONNECTING) {
             holder.textViewState.setTextColor(Color.GRAY);
-        } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTED) {
+        } else if (holder.mItem.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#99cc33"));
-        } else if (holder.mItem.getStatus() == DeviceInfo.CLOSE) {
+        } else if (holder.mItem.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
         }
-        holder.textViewState.setText(holder.mItem.getStatusString());
+        holder.textViewState.setText(NBleUtil.connectionStateToString(holder.mItem.getConnectionState()));
 
-        boolean isMaintain = NBle.getManager().isMaintain(holder.mItem.getAddress());
+        boolean isMaintain = NBle.manager().isMaintain(holder.mItem);
         holder.viewMaintain.setVisibility(isMaintain ? View.VISIBLE : View.GONE);
 
         holder.mView.setTag(holder.mItem);
@@ -80,7 +82,7 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
         public final TextView textViewState;
         public final View viewMaintain;
         public final View mView;
-        public DeviceInfo mItem;
+        public NBleDevice mItem;
 
         public ViewHolder(View view) {
             super(view);
@@ -96,7 +98,7 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
                 @Override
                 public void onClick(View v) {
                     if (null != mListener) {
-                        mListener.onItemClick((DeviceInfo) v.getTag());
+                        mListener.onItemClick((NBleDevice) v.getTag());
                     }
                 }
             });
@@ -106,7 +108,7 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
                 public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
                     Timber.e("getAdapterPosition:" + ViewHolder.this.getAdapterPosition());
                     if (null != mListener) {
-                        mListener.onCreateContextMenu(menu, v, (DeviceInfo) v.getTag());
+                        mListener.onCreateContextMenu(menu, v, (NBleDevice) v.getTag());
                     }
                 }
             });

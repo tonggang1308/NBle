@@ -25,17 +25,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import com.avos.avoscloud.feedback.FeedbackAgent;
-import com.avos.avoscloud.feedback.ThreadActivity;
-import com.tggg.nble.NBleUtil;
-import com.tggg.nble.DeviceStateEvent;
-import com.tggg.nble.NBle;
-import com.tggg.nble.NBleDevice;
-import com.tggg.nble.NBleScanner;
-import com.tggg.util.CommonUtil;
-import com.tggg.util.DeviceUtil;
+import com.gangle.nble.DeviceStateEvent;
+import com.gangle.nble.NBle;
+import com.gangle.nble.NBleDevice;
+import com.gangle.nble.NBleScanner;
+import com.gangle.nble.NBleUtil;
+import com.gangle.nble.ScanFilter.AddressScanFilter;
+import com.gangle.nble.ScanFilter.IScanFilter;
+import com.gangle.nble.ScanFilter.NameScanFilter;
+import com.gangle.nble.ScanFilter.RssiScanFilter;
+import com.gangle.util.CommonUtil;
+import com.gangle.util.DeviceUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -43,6 +44,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -56,17 +58,20 @@ import permissions.dispatcher.RuntimePermissions;
 import timber.log.Timber;
 import xyz.gangle.bleconnector.R;
 import xyz.gangle.bleconnector.data.ConstData;
-import xyz.gangle.bleconnector.data.DeviceInfo;
+import xyz.gangle.bleconnector.data.SortItemInfo;
 import xyz.gangle.bleconnector.events.FilterChangeEvent;
 import xyz.gangle.bleconnector.events.ScanDurationChangeEvent;
+import xyz.gangle.bleconnector.events.SortChangeEvent;
 import xyz.gangle.bleconnector.preference.SharedPrefManager;
 import xyz.gangle.bleconnector.presentation.adapters.DeviceRecyclerViewAdapter;
 import xyz.gangle.bleconnector.presentation.customviews.DividerItemDecoration;
 import xyz.gangle.bleconnector.presentation.fragments.DeviceInfoFragment;
-import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
 import xyz.gangle.bleconnector.presentation.fragments.ScanDurationFragment;
+import xyz.gangle.bleconnector.presentation.fragments.ScanFilterFragment;
+import xyz.gangle.bleconnector.presentation.fragments.ScanSortFragment;
 import xyz.gangle.bleconnector.presentation.listener.OnListInteractionListener;
-import xyz.gangle.bleconnector.presentation.comparators.RssiComparator;
+
+import static xyz.gangle.bleconnector.preference.SharedPrefManager.getInstance;
 
 
 @RuntimePermissions
@@ -87,16 +92,15 @@ public class ScanActivity extends AppCompatActivity
     @BindView(R.id.listView)
     RecyclerView recyclerView;
 
-    private DeviceInfo selectedDeviceInfo;
+    private NBleDevice selectedDevice;
 
-    private List<DeviceInfo> devList = Collections.synchronizedList(new ArrayList<DeviceInfo>());
-    private NBleScanner scanner;
+    private List<NBleDevice> devList = Collections.synchronizedList(new ArrayList<NBleDevice>());
+    private NBleScanner scanner = NBle.getScanner();
     private int scanDuration = NBleScanner.INDEFINITE;
-    private RssiComparator comparator = new RssiComparator();
     private Snackbar snackbar;
     private Timer countDownTimer;
     private long startScanTime;
-    FeedbackAgent agent;
+//    FeedbackAgent agent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,16 +108,16 @@ public class ScanActivity extends AppCompatActivity
         setContentView(R.layout.activity_scan);
         ButterKnife.bind(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 
@@ -123,9 +127,6 @@ public class ScanActivity extends AppCompatActivity
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
         recyclerView.setAdapter(new DeviceRecyclerViewAdapter(devList, this));
 
-        // 创建scanner
-        scanner = new NBle.ScannerBuilder(this).setNameIgnoreCase(true).build();
-
         // 设置 scan filter
         updateFilter();
 
@@ -134,6 +135,7 @@ public class ScanActivity extends AppCompatActivity
 
         // 添加已维护的设备列表
         addMaintainDevicesInfo();
+
 
         recyclerView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override
@@ -147,15 +149,24 @@ public class ScanActivity extends AppCompatActivity
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                ScanActivityPermissionsDispatcher.onScanStartWithCheck(ScanActivity.this);
+                if (null != scanner && scanner.isScanning()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                    return;
+                } else {
+                    recyclerView.removeAllViews();
+                    devList.clear();
+                    // 添加已维护的设备列表
+                    addMaintainDevicesInfo();
+                    ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(ScanActivity.this);
+                }
             }
         });
 
         navigationView.getMenu().findItem(R.id.nav_about).setTitle(DeviceUtil.getAppVersion(ScanActivity.this));
 
-        // LeanCloud 反馈初始化
-        agent = new FeedbackAgent(this);
-        agent.sync();
+//        // LeanCloud 反馈初始化
+//        agent = new FeedbackAgent(this);
+//        agent.sync();
     }
 
 
@@ -163,26 +174,8 @@ public class ScanActivity extends AppCompatActivity
     public void onDeviceStateEvent(DeviceStateEvent event) {
         if (event instanceof DeviceStateEvent) {
             Timber.d("get a event, %s", event.toString());
-            DeviceInfo deviceInfo = getDeviceInfo(event.address);
+            NBleDevice deviceInfo = getDeviceInfo(event.address);
             if (deviceInfo != null) {
-                if (event.type == DeviceStateEvent.CONNECTED) {
-                    deviceInfo.setStatus(DeviceInfo.CONNECTED);
-                } else if (event.type == DeviceStateEvent.DISCONNECTED) {
-                    deviceInfo.setStatus(DeviceInfo.DISCONNECTED);
-                    deviceInfo.setRssi(null);
-                } else if (event.type == DeviceStateEvent.CONNECTING) {
-                    deviceInfo.setStatus(DeviceInfo.CONNECTING);
-                } else if (event.type == DeviceStateEvent.CONNECT_FINISH) {
-                    deviceInfo.setStatus(DeviceInfo.CLOSE);
-                    deviceInfo.setRssi(null);
-                } else if (event.type == DeviceStateEvent.RSSI) {
-                    int rssi = CommonUtil.byte2int(event.value);
-                    deviceInfo.setRssi(rssi);
-                } else if (event.type == DeviceStateEvent.NOTIFY) {
-                } else {
-                    return;
-                }
-
                 int index = devList.indexOf(deviceInfo);
                 recyclerView.getAdapter().notifyItemChanged(index);
             }
@@ -329,25 +322,15 @@ public class ScanActivity extends AppCompatActivity
                 snackbar.dismiss();
             }
             countDownTimer.cancel();
+            swipeRefreshLayout.setRefreshing(false);
         }
 
         @Override
-        public void onDeviceDiscovered(String address, String name, int rssi, byte[] scanRecord) {
-            Timber.v("rssi:%d, device name:%s, device addr:%s", rssi, name, address);
-            DeviceInfo info = getDeviceInfo(address);
-            if (info == null) {
-                final DeviceInfo newDevice = new DeviceInfo(address, name, rssi, DeviceInfo.DISCONNECTED);
-                addDeviceInfo(newDevice);
-            } else {
-                // Found it, update info!
-                info.setRssi(rssi);
-                info.setName(name);
-                info.setStatus(DeviceInfo.DISCONNECTED);
-
-                recyclerView.getAdapter().notifyItemChanged(devList.indexOf(info));
-            }
+        public void onDeviceDiscovered(NBleDevice device, byte[] scanRecord) {
+            Timber.v("rssi:%d, device name:%s, device addr:%s", device.getRssi(), device.getName(), device.getAddress());
+            addDeviceInfo(device);
+            recyclerView.getAdapter().notifyItemChanged(devList.indexOf(device));
         }
-
     };
 
     protected int getPositionByAddress(String address) {
@@ -410,7 +393,7 @@ public class ScanActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.scan_start) {
-            ScanActivityPermissionsDispatcher.onScanStartWithCheck(this);
+            ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(this);
         } else if (id == R.id.scan_stop) {
             scanner.stop();
         }
@@ -432,14 +415,15 @@ public class ScanActivity extends AppCompatActivity
             ScanSettingActivity.fragment = new ScanFilterFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_sort) {
-
+            ScanSettingActivity.fragment = new ScanSortFragment();
+            startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_device_info) {
             ScanSettingActivity.fragment = new DeviceInfoFragment();
             startActivity(new Intent(this, ScanSettingActivity.class));
         } else if (id == R.id.nav_feedback) {
-            Intent intent = new Intent(this, FeedbackThreadActivity.class);
-            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-            startActivity(intent);
+//            Intent intent = new Intent(this, FeedbackThreadActivity.class);
+//            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+//            startActivity(intent);
         } else if (id == R.id.nav_faq) {
 
         } else if (id == R.id.nav_help) {
@@ -476,48 +460,32 @@ public class ScanActivity extends AppCompatActivity
 //        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         //获得AdapterContextMenuInfo,以此来获得选择的listview项目
 //        int position = menuInfo.position;
-        if (selectedDeviceInfo != null) {
-            String address = selectedDeviceInfo.getAddress();
-            String name = selectedDeviceInfo.getName();
-            NBleDevice device = NBle.getManager().getDevice(address);
+        if (selectedDevice != null) {
             switch (item.getItemId()) {
                 case MENU_ITEM_ADD_MAINTAIN:
-                    if (device != null) {
-                        device.setMaintain(true);
-                    } else {
-                        device = new NBle.DeviceBuilder(address, name).setMaintain(true).build();
-                    }
+                    NBle.manager().setMaintain(selectedDevice, true);
                     break;
                 case MENU_ITEM_REMOVE_MAINTAIN:
-                    if (device != null) {
-                        device.setMaintain(false);
-                    }
+                    NBle.manager().setMaintain(selectedDevice, false);
                     break;
                 case MENU_ITEM_CONNECT:
-                    if (device == null) {
-                        device = new NBle.DeviceBuilder(address, name).build();
-                    }
-
-                    if (device != null)
-                        device.connect();
+                    selectedDevice.connect();
                     break;
                 case MENU_ITEM_DISCONNECT:
-                    if (device != null) {
-                        device.disconnect();
-                    }
+                    selectedDevice.disconnect();
                     break;
             }
 
-            recyclerView.getAdapter().notifyItemChanged(devList.indexOf(selectedDeviceInfo));
+            recyclerView.getAdapter().notifyItemChanged(devList.indexOf(selectedDevice));
 
-            selectedDeviceInfo = null;
+            selectedDevice = null;
         }
         return super.onContextItemSelected(item);
     }
 
 
-    protected DeviceInfo getDeviceInfo(String address) {
-        for (DeviceInfo info : devList) {
+    protected NBleDevice getDeviceInfo(String address) {
+        for (NBleDevice info : devList) {
             if (info.getAddress().equals(address)) {
                 return info;
             }
@@ -525,65 +493,46 @@ public class ScanActivity extends AppCompatActivity
         return null;
     }
 
-    protected boolean addDeviceInfo(DeviceInfo info) {
+    protected boolean addDeviceInfo(NBleDevice info) {
         if (getDeviceInfo(info.getAddress()) == null) {
             devList.add(info);
-            recyclerView.getAdapter().notifyItemInserted(devList.size() - 1);
+            updateSort();
             return true;
         }
         return false;
     }
 
     protected void addMaintainDevicesInfo() {
-        for (NBleDevice device : NBle.getManager().getAllDevices()) {
-            DeviceInfo info = getDeviceInfo(device.getAddress());
-            if (info == null) {
-                int state = device.getConnectionState();
-                if (state == BluetoothProfile.STATE_CONNECTED) {
-                    state = DeviceInfo.CONNECTED;
-                } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                    state = DeviceInfo.DISCONNECTED;
-                } else if (state == BluetoothProfile.STATE_CONNECTING) {
-                    state = DeviceInfo.CONNECTING;
-                } else {
-                    state = DeviceInfo.DISCONNECTED;
-                }
-
-                info = new DeviceInfo(device.getAddress(), device.getName(), null, state);
-
-                addDeviceInfo(info);
+        for (NBleDevice device : NBle.manager().getAllDevices()) {
+            int state = device.getConnectionState();
+            if (NBle.manager().isMaintain(device)
+                    || (state == BluetoothProfile.STATE_CONNECTED)
+                    || (state == BluetoothProfile.STATE_CONNECTING)) {
+                addDeviceInfo(device);
             }
         }
     }
 
     @Override
-    public void onItemClick(DeviceInfo item) {
+    public void onItemClick(NBleDevice item) {
 //                DeviceActivity.start(MultiDevActivity.this, devList.get(position).address, devList.get(position).name);
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, DeviceInfo item) {
-//        int position = ((AdapterView.AdapterContextMenuInfo) menuInfo).position;
-        DeviceInfo info = item;
-        selectedDeviceInfo = item;
+    public void onCreateContextMenu(ContextMenu menu, View v, NBleDevice item) {
+        selectedDevice = item;
 
-        Toast.makeText(ScanActivity.this, info.getStatusString(), Toast.LENGTH_SHORT).show();
-
-
-        if (!NBle.getManager().isMaintain(info.getAddress()))
-            menu.add(0, MENU_ITEM_ADD_MAINTAIN, 0, "add to Maintain list");
-        else
-            menu.add(0, MENU_ITEM_REMOVE_MAINTAIN, 0, "remove from Maintain list");
-
-        NBleDevice device = NBle.getManager().getDevice(info.getAddress());
-        if (device == null) {
-            menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
-        } else if (device.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {
-            menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
-        } else if (device.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
-            menu.add(0, MENU_ITEM_DISCONNECT, 0, "Disconnect");
+        if (!NBle.manager().isMaintain(item)) {
+            menu.add(0, MENU_ITEM_ADD_MAINTAIN, 0, "Add to Maintain list");
+        } else {
+            menu.add(0, MENU_ITEM_REMOVE_MAINTAIN, 0, "Remove from Maintain list");
         }
 
+        if (item.getConnectionState() == BluetoothProfile.STATE_DISCONNECTED) {
+            menu.add(0, MENU_ITEM_CONNECT, 0, "Connect");
+        } else if (item.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
+            menu.add(0, MENU_ITEM_DISCONNECT, 0, "Disconnect");
+        }
     }
 
     @Subscribe
@@ -592,16 +541,51 @@ public class ScanActivity extends AppCompatActivity
     }
 
     @Subscribe
+    public void onSortChangeChange(SortChangeEvent event) {
+        updateSort();
+    }
+
+    @Subscribe
     public void onFilterChange(FilterChangeEvent event) {
         updateFilter();
     }
 
     protected void updateDuration() {
-        int mode = SharedPrefManager.getInstance().getScanMode();
+        int mode = getInstance().getScanMode();
         if (mode == ConstData.Scan.MODE_CONTINUOUS) {
             scanDuration = NBleScanner.INDEFINITE;
         } else if (mode == ConstData.Scan.MODE_MANUAL) {
-            scanDuration = 1000 * SharedPrefManager.getInstance().getScanDuration();
+            scanDuration = 1000 * getInstance().getScanDuration();
+        }
+    }
+
+    protected void updateSort() {
+        final List<SortItemInfo> sortInfoList = getInstance().getSortOrder();
+
+        if (sortInfoList != null && devList != null) {
+            for (int i = sortInfoList.size() - 1; i >= 0; i--) {
+                final SortItemInfo sortInfo = sortInfoList.get(i);
+                if (sortInfo.isEnable) {
+                    Collections.sort(devList, new Comparator<NBleDevice>() {
+                        @Override
+                        public int compare(NBleDevice o1, NBleDevice o2) {
+                            if (sortInfo.type == SortItemInfo.ByName) {
+                                String n1 = (o1.getName() == null) ? "N/A" : o1.getName();
+                                String n2 = (o2.getName() == null) ? "N/A" : o2.getName();
+                                return n1.compareTo(n2);
+                            } else if (sortInfo.type == SortItemInfo.ByRSSI) {
+                                int r1 = (o1.getRssi() == null) ? -1 : o1.getRssi();
+                                int r2 = (o2.getRssi() == null) ? -1 : o2.getRssi();
+                                return r1 - r2;
+                            } else if (sortInfo.type == SortItemInfo.ByMacAddress) {
+                                return o1.getAddress().compareTo(o2.getAddress());
+                            }
+                            return 0;
+                        }
+                    });
+                }
+            }
+            recyclerView.getAdapter().notifyDataSetChanged();
         }
     }
 
@@ -610,26 +594,37 @@ public class ScanActivity extends AppCompatActivity
      */
     protected void updateFilter() {
         if (scanner != null) {
+            List<IScanFilter> scanFilterList = Collections.synchronizedList(new ArrayList<IScanFilter>());
+
             // name filter
-            String name = SharedPrefManager.getInstance().getFilterName();
-            scanner.setScanName(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE) ? name : null);
+            boolean ignoreUnknown = getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_NAME_ENABLE)) {
+                String name = getInstance().getFilterName();
+                scanFilterList.add(new NameScanFilter(new String[]{name}, ignoreUnknown, true));
+            } else {
+                scanFilterList.add(new NameScanFilter(null, ignoreUnknown, true));
+            }
 
             // mac filter
-            String mac = SharedPrefManager.getInstance().getFilterMac();
-            scanner.setMac(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE) ? mac : null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_ENABLE)) {
+                String mac = getInstance().getFilterMac();
+                scanFilterList.add(new AddressScanFilter(mac));
+            }
 
             // mac range filter
-            String start = SharedPrefManager.getInstance().getFilterMacStart();
-            String end = SharedPrefManager.getInstance().getFilterMacEnd();
-            if (SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE)) {
-                scanner.setMacRange(start, end);
-            } else {
-                scanner.setMacRange(null, null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE)) {
+                String start = getInstance().getFilterMacStart();
+                String end = getInstance().getFilterMacEnd();
+                scanFilterList.add(new AddressScanFilter(start, end));
             }
 
             // rssi filter
-            int rssi = -SharedPrefManager.getInstance().getFilterRssi();
-            scanner.setRssiLimit(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE) ? rssi : null);
+            if (getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE)) {
+                int rssi = -getInstance().getFilterRssi();
+                scanFilterList.add(new RssiScanFilter(rssi));
+            }
+
+            scanner.setFilters(scanFilterList.toArray(new IScanFilter[scanFilterList.size()]));
         }
     }
 

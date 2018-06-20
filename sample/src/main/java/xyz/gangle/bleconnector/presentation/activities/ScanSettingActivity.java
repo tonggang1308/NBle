@@ -8,7 +8,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
-import butterknife.ButterKnife;
 import xyz.gangle.bleconnector.R;
 
 

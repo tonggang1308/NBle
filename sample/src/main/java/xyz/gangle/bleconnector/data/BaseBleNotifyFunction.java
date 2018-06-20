@@ -2,16 +2,16 @@ package xyz.gangle.bleconnector.data;
 
 import android.content.Context;
 
+import com.gangle.nble.DeviceStateEvent;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
+import com.gangle.util.CommonUtil;
+
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.UUID;
 
-import com.tggg.nble.ifunction.IBleNotifyFunction;
-import com.tggg.util.CommonUtil;
-import com.tggg.nble.DeviceStateEvent;
 
-
-public class BaseBleNotifyFunction implements IBleNotifyFunction {
+public class BaseBleNotifyFunction implements INBleNotifyFunction {
 
     @Override
     public UUID[] getNotifyUuid() {

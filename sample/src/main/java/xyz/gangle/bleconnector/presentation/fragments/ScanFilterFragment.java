@@ -12,7 +12,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import org.greenrobot.eventbus.EventBus;
-import org.w3c.dom.Text;
 
 import butterknife.BindView;
 import butterknife.OnCheckedChanged;
@@ -38,6 +37,9 @@ public class ScanFilterFragment extends BaseFragment {
     @BindView(R.id.rl_rssi)
     View rssiLayout;
 
+    @BindView(R.id.rl_na)
+    View unknownLayout;
+
     @BindView(R.id.checkbox_name)
     CheckBox nameCkb;
 
@@ -49,6 +51,9 @@ public class ScanFilterFragment extends BaseFragment {
 
     @BindView(R.id.checkbox_rssi)
     CheckBox rssiCkb;
+
+    @BindView(R.id.checkbox_na)
+    CheckBox unknowCkb;
 
     @BindView(R.id.et_name)
     EditText nameEdit;
@@ -139,6 +144,8 @@ public class ScanFilterFragment extends BaseFragment {
         setParentLayoutEnableExcludeSelf(macScopeCkb, macScopeCkb.isChecked());
 
         setParentLayoutEnableExcludeSelf(rssiCkb, rssiCkb.isChecked());
+
+        setParentLayoutEnableExcludeSelf(unknowCkb, unknowCkb.isChecked());
     }
 
     /**
@@ -154,6 +161,8 @@ public class ScanFilterFragment extends BaseFragment {
         macScopeCkb.setChecked(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_MAC_SCOPE_ENABLE));
         macStartEdit.setText(SharedPrefManager.getInstance().getFilterMacStart());
         macEndEdit.setText(SharedPrefManager.getInstance().getFilterMacEnd());
+
+        unknowCkb.setChecked(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE));
 
         rssiCkb.setChecked(SharedPrefManager.getInstance().isFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE));
         int rssi = SharedPrefManager.getInstance().getFilterRssi();
@@ -199,6 +208,9 @@ public class ScanFilterFragment extends BaseFragment {
         SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_RSSI_ENABLE, rssiCkb.isChecked());
         SharedPrefManager.getInstance().setFilterRssi(rssiSeekbar.getProgress());
 
+        // NA
+        SharedPrefManager.getInstance().setFilterEnable(SharedPrefManager.KEY_FILTER_UNKNOWN_DEVICE_ENABLE, unknowCkb.isChecked());
+
         EventBus.getDefault().post(new FilterChangeEvent());
     }
 
@@ -208,7 +220,7 @@ public class ScanFilterFragment extends BaseFragment {
         storeValidFilter();
     }
 
-    @OnCheckedChanged({R.id.checkbox_mac, R.id.checkbox_mac_scope, R.id.checkbox_name, R.id.checkbox_rssi})
+    @OnCheckedChanged({R.id.checkbox_mac, R.id.checkbox_mac_scope, R.id.checkbox_name, R.id.checkbox_rssi, R.id.checkbox_na})
     protected void onCheckBoxCheckedChanged() {
         updateEnableStatus();
     }
