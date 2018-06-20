@@ -3,14 +3,14 @@ package xyz.gangle.bleconnector.presentation.listener;
 import android.view.ContextMenu;
 import android.view.View;
 
-import xyz.gangle.bleconnector.data.DeviceInfo;
+import com.gangle.nble.NBleDevice;
 
 /**
  * Created by Tong Gang on 7/23/16.
  */
 
 public interface OnListInteractionListener {
-    void onItemClick(DeviceInfo item);
+    void onItemClick(NBleDevice item);
 
-    void onCreateContextMenu(ContextMenu menu, View v, DeviceInfo item);
+    void onCreateContextMenu(ContextMenu menu, View v, NBleDevice item);
 }

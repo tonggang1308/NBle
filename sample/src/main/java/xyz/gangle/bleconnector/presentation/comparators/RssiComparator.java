@@ -1,22 +1,23 @@
 package xyz.gangle.bleconnector.presentation.comparators;
 
+import android.bluetooth.BluetoothProfile;
+
 import com.gangle.nble.NBle;
+import com.gangle.nble.NBleDevice;
 
 import java.util.Comparator;
-
-import xyz.gangle.bleconnector.data.DeviceInfo;
 
 /**
  * Created by yiyidu on 6/1/16.
  */
 
-public class RssiComparator implements Comparator<DeviceInfo> {
+public class RssiComparator implements Comparator<NBleDevice> {
 
     @Override
-    public int compare(DeviceInfo itemBean1, DeviceInfo itemBean2) {
+    public int compare(NBleDevice itemBean1, NBleDevice itemBean2) {
         // 处于维护状态的排在前列
-        boolean isMaintain1 = NBle.manager().isMaintain(itemBean1.getAddress());
-        boolean isMaintain2 = NBle.manager().isMaintain(itemBean2.getAddress());
+        boolean isMaintain1 = NBle.manager().isMaintain(itemBean1);
+        boolean isMaintain2 = NBle.manager().isMaintain(itemBean2);
         if (isMaintain1 && isMaintain2) {
             return 0;
         } else if (isMaintain1) {
@@ -26,11 +27,11 @@ public class RssiComparator implements Comparator<DeviceInfo> {
         }
 
         // 连接成功的排在前列
-        if (itemBean1.getStatus() == DeviceInfo.CONNECTED && itemBean2.getStatus() == DeviceInfo.CONNECTED) {
+        if (itemBean1.getConnectionState() == BluetoothProfile.STATE_CONNECTED && itemBean2.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
             return 0;
-        } else if (itemBean1.getStatus() == DeviceInfo.CONNECTED) {
+        } else if (itemBean1.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
             return -1;
-        } else if (itemBean2.getStatus() == DeviceInfo.CONNECTED) {
+        } else if (itemBean2.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
             return 1;
         }
 

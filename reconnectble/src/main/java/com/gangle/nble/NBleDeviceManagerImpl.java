@@ -139,14 +139,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     /**
-     * 查询某address的设备是否是维护状态
-     */
-    public synchronized boolean isMaintain(String address) {
-        NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
-        return device != null && mMaintainSet.contains(device);
-    }
-
-    /**
      * 查询某设备是否是维护状态
      */
     public synchronized boolean isMaintain(NBleDevice device) {
@@ -163,14 +155,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
             mMaintainSet.remove(device);
         }
         NBleDeviceManagerImpl.getInstance().storeDevices();
-    }
-
-    /**
-     * 根据address设置设备的维护状态
-     */
-    public synchronized void setMaintain(String address, boolean bMaintain) {
-        NBleDeviceImpl device = (NBleDeviceImpl) getDevice(address);
-        setMaintain(device, bMaintain);
     }
 
     /**
@@ -213,9 +197,9 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     /**
      * 删除设备
      */
-    public synchronized void remove(String address) {
-        LogUtils.v("remove Device:%s", address);
-        NBleDeviceImpl remove = (NBleDeviceImpl) mDevices.remove(address);
+    public synchronized void remove(NBleDevice device) {
+        LogUtils.v("remove Device:%s", device.getAddress());
+        NBleDeviceImpl remove = (NBleDeviceImpl) mDevices.remove(device.getAddress());
         if (remove != null && isMaintain(remove)) {
             storeDevices();
         }
@@ -312,12 +296,11 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         if (serializationList != null) {
             synchronized (mDevices) {
                 for (DeviceBase deviceBase : serializationList) {
-                    if (getDevice(deviceBase.getAddress()) == null) {
-                        NBleDevice device = createDevice(deviceBase.getAddress(), deviceBase.getName());
-                        setMaintain(device, true);
-                    } else {
-                        setMaintain(deviceBase.getAddress(), true);
+                    NBleDevice device = getDevice(deviceBase.getAddress());
+                    if (device == null) {
+                        device = createDevice(deviceBase.getAddress(), deviceBase.getName());
                     }
+                    setMaintain(device, true);
                     LogUtils.v("Restore Device:%s, isMaintain:%s", deviceBase.getAddress(), true);
                 }
             }

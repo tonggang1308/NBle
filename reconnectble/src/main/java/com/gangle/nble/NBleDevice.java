@@ -24,6 +24,11 @@ public interface NBleDevice {
     String getName();
 
     /**
+     * 获取Rssi
+     */
+    Integer getRssi();
+
+    /**
      * 写数据
      */
     void write(UUID serviceUuid, UUID characteristicUuid, byte[] data);
@@ -42,11 +47,6 @@ public interface NBleDevice {
      * 获取当前设备的连接状态
      */
     int getConnectionState();
-
-    /**
-     * 是否已连接
-     */
-    boolean isConnected();
 
     /**
      * 断开连接。

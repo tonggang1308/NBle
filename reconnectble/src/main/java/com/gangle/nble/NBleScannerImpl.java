@@ -34,7 +34,6 @@ class NBleScannerImpl implements NBleScanner {
 
     private Handler mHandler;
     private boolean mScanning = false;
-    private List<String> addressList = new ArrayList<>();
 
     public NBleScannerImpl(final Context context) {
         this.context = context;
@@ -82,24 +81,28 @@ class NBleScannerImpl implements NBleScanner {
             return;
         }
 
-        // whether device is exist
-        if (!addressList.contains(device.getAddress())) {
+        // add device to manager
+        if (NBle.manager().getDevice(device.getAddress()) == null) {
+            ((NBleDeviceManagerImpl)NBle.manager()).createDevice(device.getAddress(), device.getName());
             LogUtils.v(String.format("ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
-            addressList.add(device.getAddress());
         }
+
+        // set rssi
+        NBleDeviceImpl nBleDevice = (NBleDeviceImpl)NBle.manager().getDevice(device.getAddress());
+        nBleDevice.setRssi(rssi);
 
         // whether device match the filters
         if (scanFilters != null && scanFilters.length > 0) {
             for (IScanFilter filter : scanFilters) {
                 if (filter.isMatch(device, rssi)) {
                     LogUtils.v(String.format("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
-                    mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
+                    mScanListener.onDeviceDiscovered(nBleDevice, scanRecord);
                     return;
                 }
             }
         } else {
-            LogUtils.v("NO MATCH FILTER!");
-            mScanListener.onDeviceDiscovered(device.getAddress(), device.getName(), rssi, scanRecord);
+            LogUtils.v("NO FILTER!");
+            mScanListener.onDeviceDiscovered(nBleDevice, scanRecord);
             return;
         }
     }
@@ -121,7 +124,6 @@ class NBleScannerImpl implements NBleScanner {
     }
 
     public boolean start(BleScanListener callback, int duration) {
-        addressList.clear();
         return start(uuids, callback, duration);
     }
 
@@ -200,8 +202,6 @@ class NBleScannerImpl implements NBleScanner {
             if (mScanListener != null) {
                 mScanListener.onScanStopped();
             }
-
-            addressList.clear();
         }
         mScanListener = null;
     }

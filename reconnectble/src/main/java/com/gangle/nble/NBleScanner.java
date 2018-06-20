@@ -33,7 +33,7 @@ public interface NBleScanner {
 
         void onScanStopped();
 
-        void onDeviceDiscovered(String address, String name, int rssi, byte[] scanRecord);
+        void onDeviceDiscovered(NBleDevice device, byte[] scanRecord);
     }
 
 }

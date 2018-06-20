@@ -219,12 +219,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         bleGatt.readRemoteRssi();
     }
 
-    /**
-     * 是否已连接
-     */
-    public boolean isConnected() {
-        return getConnectionState() == BluetoothProfile.STATE_CONNECTED;
-    }
 
     /**
      * 获取当前设备的连接状态
@@ -373,6 +367,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             final String address = gatt.getDevice().getAddress();
             String deviceName = gatt.getDevice().getName();
+            NBleDevice device = manager().getDevice(address);
 
             LogUtils.i(getName() + ", " + address + ", Connection status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
 
@@ -406,7 +401,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
                         getNotifyFunction().onDisconnected(context, gatt.getDevice().getAddress());
 
-                        if (bluetoothAdapter.isEnabled() && manager().isMaintain(address)) {
+                        if (bluetoothAdapter.isEnabled() && manager().isMaintain(device)) {
                             LogUtils.d("Device " + address + " is in maintain list");
                             if (status == BluetoothGatt.GATT_SUCCESS) {
                                 LogUtils.i(address + " gatt.connectImpl()");
