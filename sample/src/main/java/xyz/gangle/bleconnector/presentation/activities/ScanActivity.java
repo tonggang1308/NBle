@@ -137,8 +137,6 @@ public class ScanActivity extends AppCompatActivity
         // 设置 scan duration
         updateDuration();
 
-        // 添加已维护的设备列表
-        addMaintainDevicesInfo();
 
         recyclerView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override
@@ -158,6 +156,8 @@ public class ScanActivity extends AppCompatActivity
                 } else {
                     recyclerView.removeAllViews();
                     devList.clear();
+                    // 添加已维护的设备列表
+                    addMaintainDevicesInfo();
                     ScanActivityPermissionsDispatcher.onScanStartWithPermissionCheck(ScanActivity.this);
                 }
             }
@@ -355,7 +355,6 @@ public class ScanActivity extends AppCompatActivity
                 // Found it, update info!
                 info.setRssi(rssi);
                 info.setName(name);
-                info.setStatus(DeviceInfo.DISCONNECTED);
 
                 recyclerView.getAdapter().notifyItemChanged(devList.indexOf(info));
             }
@@ -548,22 +547,26 @@ public class ScanActivity extends AppCompatActivity
 
     protected void addMaintainDevicesInfo() {
         for (NBleDevice device : NBle.manager().getAllDevices()) {
-            DeviceInfo info = getDeviceInfo(device.getAddress());
-            if (info == null) {
-                int state = device.getConnectionState();
-                if (state == BluetoothProfile.STATE_CONNECTED) {
-                    state = DeviceInfo.CONNECTED;
-                } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                    state = DeviceInfo.DISCONNECTED;
-                } else if (state == BluetoothProfile.STATE_CONNECTING) {
-                    state = DeviceInfo.CONNECTING;
-                } else {
-                    state = DeviceInfo.DISCONNECTED;
+            int state = device.getConnectionState();
+            if (NBle.manager().isMaintain(device)
+                    || (state == BluetoothProfile.STATE_CONNECTED)
+                    || (state == BluetoothProfile.STATE_CONNECTING)) {
+
+                DeviceInfo info = getDeviceInfo(device.getAddress());
+                if (info == null) {
+                    if (state == BluetoothProfile.STATE_CONNECTED) {
+                        state = DeviceInfo.CONNECTED;
+                    } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                        state = DeviceInfo.DISCONNECTED;
+                    } else if (state == BluetoothProfile.STATE_CONNECTING) {
+                        state = DeviceInfo.CONNECTING;
+                    } else {
+                        state = DeviceInfo.DISCONNECTED;
+                    }
+
+                    info = new DeviceInfo(device.getAddress(), device.getName(), null, state);
+                    addDeviceInfo(info);
                 }
-
-                info = new DeviceInfo(device.getAddress(), device.getName(), null, state);
-
-                addDeviceInfo(info);
             }
         }
     }
@@ -637,7 +640,9 @@ public class ScanActivity extends AppCompatActivity
                                 String n2 = (o2.getName() == null) ? "N/A" : o2.getName();
                                 return n1.compareTo(n2);
                             } else if (sortInfo.type == SortItemInfo.ByRSSI) {
-                                return o1.getRssi().compareTo(o2.getRssi());
+                                int r1 = (o1.getRssi() == null) ? -1 : o1.getRssi();
+                                int r2 = (o2.getRssi() == null) ? -1 : o2.getRssi();
+                                return r1 - r2;
                             } else if (sortInfo.type == SortItemInfo.ByMacAddress) {
                                 return o1.getAddress().compareTo(o2.getAddress());
                             }

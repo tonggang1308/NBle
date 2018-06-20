@@ -24,11 +24,6 @@ public interface NBleDevice {
     String getName();
 
     /**
-     * 设置监听
-     */
-    void setINotifyFunction(INBleNotifyFunction iNotifyFunction);
-
-    /**
      * 写数据
      */
     void write(UUID serviceUuid, UUID characteristicUuid, byte[] data);

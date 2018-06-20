@@ -40,16 +40,10 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     private BluetoothGatt bleGatt;
     private BluetoothAdapter bluetoothAdapter;
 
-
     /**
      * 记录当前device是否在连接中。
      */
     private boolean isConnecting = false;
-
-    /**
-     * 通知接口。当有Notification达到时，调用此接口。
-     */
-    private INBleNotifyFunction iNBleNotifyFunction;
 
     private NBleDeviceImpl() {
         super(null, null);
@@ -188,23 +182,15 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public void onReadImpl(String address, UUID uuid, byte[] value) {
-        if (iNBleNotifyFunction != null) {
-            iNBleNotifyFunction.onRead(context, address, uuid, value);
-        }
+        getNotifyFunction().onRead(context, address, uuid, value);
     }
 
     public void onWriteImpl(String address, UUID uuid, byte[] value) {
-        if (iNBleNotifyFunction != null) {
-            iNBleNotifyFunction.onWrite(context, address, uuid, value);
-        }
+        getNotifyFunction().onWrite(context, address, uuid, value);
     }
 
     public INBleNotifyFunction getNotifyFunction() {
-        return this.iNBleNotifyFunction;
-    }
-
-    public void setINotifyFunction(INBleNotifyFunction iNotifyFunction) {
-        this.iNBleNotifyFunction = iNotifyFunction;
+        return NBle.manager().getNotification(getName());
     }
 
     /**
@@ -322,9 +308,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         isConnecting = true;
 
         recordStatus(StatusChangeRecord.CONNECT);
-        if (iNBleNotifyFunction != null) {
-            iNBleNotifyFunction.onConnectStart(context, getAddress());
-        }
+        getNotifyFunction().onConnectStart(context, getAddress());
 
         bleGatt = bluetoothDevice.connectGatt(context, autoConnect, gattCallBack);
 
@@ -333,14 +317,10 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             recordStatus(StatusChangeRecord.CONNECTED_ERROR);
 
             // onConnectFinish 是根据bleGatt来判定是否要调用。
-            if (iNBleNotifyFunction != null) {
-                iNBleNotifyFunction.onConnectFinish(context, getAddress());
-            }
+            getNotifyFunction().onConnectFinish(context, getAddress());
             return false;
         } else {
-            if (iNBleNotifyFunction != null) {
-                iNBleNotifyFunction.onConnecting(context, getAddress());
-            }
+            getNotifyFunction().onConnecting(context, getAddress());
         }
 
         LogUtils.d("connecting address");
@@ -358,9 +338,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             bleGatt = null;
             recordStatus(StatusChangeRecord.CLOSE);
 
-            if (iNBleNotifyFunction != null) {
-                iNBleNotifyFunction.onConnectFinish(context, getAddress());
-            }
+            getNotifyFunction().onConnectFinish(context, getAddress());
         }
     }
 
@@ -381,7 +359,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             final String address = gatt.getDevice().getAddress();
             String deviceName = gatt.getDevice().getName();
 
-            LogUtils.i(getName() + ", " + address + ", " + iNBleNotifyFunction.getClass().getName() + ", Connection operation status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState));
+            LogUtils.i(getName() + ", " + address + ", Connection status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
 
             try {
                 isConnecting = false;
@@ -397,9 +375,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
                             gatt.discoverServices();
 
-                            if (iNBleNotifyFunction != null) {
-                                iNBleNotifyFunction.onConnected(context, gatt.getDevice().getAddress());
-                            }
+                            getNotifyFunction().onConnected(context, gatt.getDevice().getAddress());
                         } else {
                             // status == GATT_ERROR
                             // 异常断开，需要close后重连
@@ -413,9 +389,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         // 如果用户主动disconnect，需要手动removeFromMaintain，否则也会重新连接。
                         recordStatus(StatusChangeRecord.DISCONNECTED);
 
-                        if (iNBleNotifyFunction != null) {
-                            iNBleNotifyFunction.onDisconnected(context, gatt.getDevice().getAddress());
-                        }
+                        getNotifyFunction().onDisconnected(context, gatt.getDevice().getAddress());
 
                         if (bluetoothAdapter.isEnabled() && manager().isMaintain(address)) {
                             LogUtils.d("Device " + address + " is in maintain list");
@@ -425,9 +399,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                                     LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
                                     isConnecting = true;
                                     recordStatus(StatusChangeRecord.AUTOCONNECT);
-                                    if (iNBleNotifyFunction != null) {
-                                        iNBleNotifyFunction.onConnecting(context, gatt.getDevice().getAddress());
-                                    }
+                                    getNotifyFunction().onConnecting(context, gatt.getDevice().getAddress());
                                 } else {
                                     LogUtils.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
                                     recordStatus(StatusChangeRecord.AUTOCONNECT_FAIL);
@@ -493,14 +465,12 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
             //
             // LogUtils.i("Notification Addr:%s\tChara:%s\tValue:%s\t", gatt.getDevice().getAddress(), characteristic.getUuid().toString(), StringUtil.getHexString(value));
-            if (iNBleNotifyFunction != null) {
-                UUID[] notifyUuids = iNBleNotifyFunction.getNotifyUuid();
-                if (notifyUuids != null) {
-                    for (UUID uuid : notifyUuids) {
-                        if (uuid.equals(characteristic.getUuid())) {
-                            iNBleNotifyFunction.onNotify(context, gatt.getDevice().getAddress(), characteristic.getUuid(), characteristic.getValue());
-                            return;
-                        }
+            UUID[] notifyUuids = getNotifyFunction().getNotifyUuid();
+            if (notifyUuids != null) {
+                for (UUID uuid : notifyUuids) {
+                    if (uuid.equals(characteristic.getUuid())) {
+                        getNotifyFunction().onNotify(context, gatt.getDevice().getAddress(), characteristic.getUuid(), characteristic.getValue());
+                        return;
                     }
                 }
             }
@@ -527,9 +497,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
 //            LogUtils.d("onReadRemoteRssi: " + gatt.getDevice().getAddress() + " rssi: " + rssi + " status: " + status);
-            if (iNBleNotifyFunction != null) {
-                iNBleNotifyFunction.onRssi(context, gatt.getDevice().getAddress(), rssi);
-            }
+            getNotifyFunction().onRssi(context, gatt.getDevice().getAddress(), rssi);
         }
 
         @Override
