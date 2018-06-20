@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -14,7 +15,6 @@ import android.os.Handler;
 
 import com.gangle.nble.ScanFilter.IScanFilter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +27,6 @@ class NBleScannerImpl implements NBleScanner {
     private UUID[] uuids;
     private IScanFilter[] scanFilters;
 
-    private final BluetoothAdapter.LeScanCallback mLeScanCallback; // of android
     private ScanCallback m21Scancalback;
     private BluetoothAdapter mAdapter;
     private BleScanListener mScanListener; // of this scanner
@@ -35,23 +34,25 @@ class NBleScannerImpl implements NBleScanner {
     private Handler mHandler;
     private boolean mScanning = false;
 
-    public NBleScannerImpl(final Context context) {
-        this.context = context;
-        mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
-            @Override
-            public void onLeScan(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
-                processScanResult(device, rssi, scanRecord);
-            }
-        };
+    private final BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
+            processScanResult(device, rssi, scanRecord);
+        }
+    };
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+     NBleScannerImpl(final Context context) {
+        this.context = context;
+
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             m21Scancalback = new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
 
                     if (callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
-                        processScanResult(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes());
+                        ScanRecord scanRecord = result.getScanRecord();
+                        processScanResult(result.getDevice(), result.getRssi(), scanRecord == null ? new byte[]{} : scanRecord.getBytes());
                     }
                 }
 
@@ -59,7 +60,7 @@ class NBleScannerImpl implements NBleScanner {
                 public void onBatchScanResults(List<ScanResult> results) {
                     super.onBatchScanResults(results);
 
-                    LogUtils.d(String.format("onBatchScanResults, size:%d", results.size()));
+                    LogUtils.d("onBatchScanResults, size:%d", results.size());
 
                 }
 
@@ -67,7 +68,7 @@ class NBleScannerImpl implements NBleScanner {
                 public void onScanFailed(int errorCode) {
                     super.onScanFailed(errorCode);
                     stop();
-                    LogUtils.d(String.format("onScanFailed, errorCode:%d", errorCode));
+                    LogUtils.d("onScanFailed, errorCode:%d", errorCode);
                 }
             };
         }
@@ -75,7 +76,7 @@ class NBleScannerImpl implements NBleScanner {
         mHandler = new Handler(context.getMainLooper());
     }
 
-    protected void processScanResult(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
+    private void processScanResult(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
         if (mScanListener == null) {
             LogUtils.e("Callback not set!");
             return;
@@ -84,7 +85,7 @@ class NBleScannerImpl implements NBleScanner {
         // add device to manager
         if (NBle.manager().getDevice(device.getAddress()) == null) {
             ((NBleDeviceManagerImpl)NBle.manager()).createDevice(device.getAddress(), device.getName());
-            LogUtils.v(String.format("ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
+            LogUtils.v("ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
         }
 
         // set rssi
@@ -95,7 +96,7 @@ class NBleScannerImpl implements NBleScanner {
         if (scanFilters != null && scanFilters.length > 0) {
             for (IScanFilter filter : scanFilters) {
                 if (filter.isMatch(device, rssi)) {
-                    LogUtils.v(String.format("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName()));
+                    LogUtils.v("MATCH FILTER ADDRESS:%s, RSSI:%d, NAME:%s", device.getAddress(), rssi, device.getName());
                     mScanListener.onDeviceDiscovered(nBleDevice, scanRecord);
                     return;
                 }
@@ -103,7 +104,6 @@ class NBleScannerImpl implements NBleScanner {
         } else {
             LogUtils.v("NO FILTER!");
             mScanListener.onDeviceDiscovered(nBleDevice, scanRecord);
-            return;
         }
     }
 
@@ -176,7 +176,7 @@ class NBleScannerImpl implements NBleScanner {
         return false;
     }
 
-    Runnable stopRunnable = new Runnable() {
+    private Runnable stopRunnable = new Runnable() {
         @Override
         public void run() {
             stop();

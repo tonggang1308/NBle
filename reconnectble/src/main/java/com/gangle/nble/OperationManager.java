@@ -1,5 +1,6 @@
 package com.gangle.nble;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -8,7 +9,7 @@ import java.util.List;
  */
 final class OperationManager {
 
-    private List<Operation> operationList = Collections.synchronizedList(Collections.EMPTY_LIST);
+    private List<Operation> operationList = Collections.synchronizedList(new ArrayList<Operation>());
 
     private OnValidateOperationListener listener;
 
