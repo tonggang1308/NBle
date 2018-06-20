@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.gangle.nble.NBle;
+import com.gangle.nble.NBleUtil;
 
 import java.util.List;
 
@@ -39,17 +40,17 @@ public class DeviceRecyclerViewAdapter extends RecyclerView.Adapter<DeviceRecycl
         holder.mItem = mValues.get(position);
         holder.textViewName.setText((holder.mItem.getName() == null || holder.mItem.getName().isEmpty()) ? "N/A" : holder.mItem.getName());
         holder.textViewAddress.setText(holder.mItem.getAddress());
-        holder.textViewRssi.setText(holder.mItem.getRssiString());
+        holder.textViewRssi.setText(NBleUtil.rssiToString(holder.mItem.getRssi()));
         if (holder.mItem.getStatus() == DeviceInfo.DISCONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
         } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTING) {
             holder.textViewState.setTextColor(Color.GRAY);
         } else if (holder.mItem.getStatus() == DeviceInfo.CONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#99cc33"));
-        } else if (holder.mItem.getStatus() == DeviceInfo.CLOSE) {
+        } else if (holder.mItem.getStatus() == DeviceInfo.DISCONNECTED) {
             holder.textViewState.setTextColor(Color.parseColor("#999999"));
         }
-        holder.textViewState.setText(holder.mItem.getStatusString());
+        holder.textViewState.setText(NBleUtil.connectionStateToString(holder.mItem.getStatus()));
 
         boolean isMaintain = NBle.manager().isMaintain(holder.mItem.getAddress());
         holder.viewMaintain.setVisibility(isMaintain ? View.VISIBLE : View.GONE);

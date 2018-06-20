@@ -41,6 +41,11 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     private BluetoothAdapter bluetoothAdapter;
 
     /**
+     * rssi 信号值
+     */
+    private Integer rssi;
+
+    /**
      * 记录当前device是否在连接中。
      */
     private boolean isConnecting = false;
@@ -65,6 +70,15 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public String getName() {
         return super.getName();
+    }
+
+
+    public Integer getRssi() {
+        return this.rssi;
+    }
+
+    public void setRssi(int rssi) {
+        this.rssi = rssi;
     }
 
 
@@ -336,6 +350,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         if (bleGatt != null) {
             bleGatt.close();
             bleGatt = null;
+            bluetoothAdapter = null;
             recordStatus(StatusChangeRecord.CLOSE);
 
             getNotifyFunction().onConnectFinish(context, getAddress());
@@ -496,7 +511,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-//            LogUtils.d("onReadRemoteRssi: " + gatt.getDevice().getAddress() + " rssi: " + rssi + " status: " + status);
+            LogUtils.d("onReadRemoteRssi: " + gatt.getDevice().getAddress() + " rssi: " + rssi + " status: " + status);
             getNotifyFunction().onRssi(context, gatt.getDevice().getAddress(), rssi);
         }
 
@@ -508,4 +523,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
     private class ConnectException extends Exception {
     }
+
+
 }

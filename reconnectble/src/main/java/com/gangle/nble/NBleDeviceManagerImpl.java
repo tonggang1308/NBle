@@ -313,13 +313,12 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
             synchronized (mDevices) {
                 for (DeviceBase deviceBase : serializationList) {
                     if (getDevice(deviceBase.getAddress()) == null) {
-                        NBleDeviceImpl device = new NBleDeviceImpl(context, deviceBase.getAddress(), deviceBase.getName());
-                        add(device);
+                        NBleDevice device = createDevice(deviceBase.getAddress(), deviceBase.getName());
                         setMaintain(device, true);
-                        LogUtils.v("Restore Device:%s, isMaintain:%s", device.getAddress(), isMaintain(device));
-                    }else {
+                    } else {
                         setMaintain(deviceBase.getAddress(), true);
                     }
+                    LogUtils.v("Restore Device:%s, isMaintain:%s", deviceBase.getAddress(), true);
                 }
             }
         }

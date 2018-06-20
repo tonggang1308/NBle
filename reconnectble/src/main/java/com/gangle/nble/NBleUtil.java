@@ -80,6 +80,10 @@ public final class NBleUtil {
         }
     }
 
+    public static String rssiToString(Integer rssi) {
+        return rssi == null ? "---" : String.format("%ddb", rssi);
+    }
+
     public static String gattToString(BluetoothGatt gatt) {
         if (gatt == null) {
             return "null";

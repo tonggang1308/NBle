@@ -59,10 +59,10 @@ public interface NBleDeviceManager {
      */
     INBleNotifyFunction getNotification(String deviceName);
 
-    /**
-     * 根据设备名注册notification的处理接口
-     */
-    void registerNotification(String deviceName, INBleNotifyFunction iFunction);
+//    /**
+//     * 根据设备名注册notification的处理接口
+//     */
+//    void registerNotification(String deviceName, INBleNotifyFunction iFunction);
 
     /**
      * 注册notification的默认处理接口

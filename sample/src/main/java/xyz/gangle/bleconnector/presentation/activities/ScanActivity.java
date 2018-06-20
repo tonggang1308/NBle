@@ -185,7 +185,7 @@ public class ScanActivity extends AppCompatActivity
                 } else if (event.type == DeviceStateEvent.CONNECTING) {
                     deviceInfo.setStatus(DeviceInfo.CONNECTING);
                 } else if (event.type == DeviceStateEvent.CONNECT_FINISH) {
-                    deviceInfo.setStatus(DeviceInfo.CLOSE);
+                    deviceInfo.setStatus(DeviceInfo.DISCONNECTED);
                     deviceInfo.setRssi(null);
                 } else if (event.type == DeviceStateEvent.RSSI) {
                     int rssi = CommonUtil.byte2int(event.value);
@@ -582,7 +582,7 @@ public class ScanActivity extends AppCompatActivity
         DeviceInfo info = item;
         selectedDeviceInfo = item;
 
-        Toast.makeText(ScanActivity.this, info.getStatusString(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(ScanActivity.this, NBleUtil.connectionStateToString(info.getStatus()), Toast.LENGTH_SHORT).show();
 
 
         if (!NBle.manager().isMaintain(info.getAddress()))
