@@ -381,7 +381,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                             // status == GATT_ERROR
                             // 异常断开，需要close后重连
                             recordStatus(StatusChangeRecord.CONNECTED_ERROR);
-                            throw new ConnectException();
+                            throw new IllegalStateException();
                         }
                         break;
                     case BluetoothProfile.STATE_DISCONNECTED:
@@ -404,22 +404,22 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                                 } else {
                                     LogUtils.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
                                     recordStatus(StatusChangeRecord.AUTOCONNECT_FAIL);
-                                    throw new ConnectException();
+                                    throw new IllegalStateException();
                                 }
                             } else {
                                 // status == GATT_FAILURE, 属于connectGatt时,registerClient失败，需要close后重连
                                 // status == 133, 属于异常断开，需要close后重连
-                                throw new ConnectException();
+                                throw new IllegalStateException();
                             }
                         } else {
                             LogUtils.d("bluetooth adapter is DISABLE or NOT in maintain list.");
-                            throw new ConnectException();
+                            throw new IllegalStateException();
                         }
                         break;
                     default:
                         // NO OP
                 }
-            } catch (ConnectException e) {
+            } catch (Exception e) {
 
                 manager().onConnectException(NBleDeviceImpl.this, status);
             }
@@ -501,9 +501,4 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             LogUtils.d(gatt.getDevice().getAddress() + " mtu: " + mtu + " status: " + status);
         }
     };
-
-    private class ConnectException extends Exception {
-    }
-
-
 }
