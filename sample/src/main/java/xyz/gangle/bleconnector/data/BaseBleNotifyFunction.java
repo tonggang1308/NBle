@@ -44,6 +44,11 @@ public class BaseBleNotifyFunction implements INBleNotifyFunction {
     }
 
     @Override
+    public void onServicesDiscovered(Context context, String address){
+        postEvent(new DeviceStateEvent(DeviceStateEvent.DISCOVERED, address));
+    }
+
+    @Override
     public void onConnecting(Context context, String address) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECTING, address));
     }

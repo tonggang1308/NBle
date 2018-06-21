@@ -230,6 +230,11 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         OperationManager.getInstance().pend(new Operation(Operation.OP_READ_CHARACTERISTIC, address, serviceUuid, characteristicUuid));
     }
 
+    public void onServicesDiscovered(String address) {
+        ((NBleDeviceImpl) getDevice(address)).onServicesDiscovered(address);
+    }
+
+
     public void onReadCharacteristic(String address, UUID uuid, byte[] value) {
 
         synchronized (currentOperation) {

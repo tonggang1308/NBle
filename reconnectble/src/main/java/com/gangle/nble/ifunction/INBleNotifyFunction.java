@@ -27,6 +27,11 @@ public interface INBleNotifyFunction {
     void onWrite(Context context, String address, UUID uuid, byte[] value);
 
     /**
+     * service and chara discovered
+     */
+    void onServicesDiscovered(Context context, String address);
+
+    /**
      * 开始连接，每次开始连接，都会调用此函数。
      * 接下去会调用connectGatt来开始尝试连接。
      * 如果connectGatt返回false，会直接触发onConnectFinish的调用

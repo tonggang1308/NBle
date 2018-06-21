@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
@@ -183,7 +184,8 @@ public class ScanActivity extends AppCompatActivity
                 recyclerView.getAdapter().notifyItemChanged(index);
             }
 
-            if (event.type == DeviceStateEvent.CONNECTED) {
+            // enable notifications
+            if (event.type == DeviceStateEvent.DISCOVERED) {
                 device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
             }
         }

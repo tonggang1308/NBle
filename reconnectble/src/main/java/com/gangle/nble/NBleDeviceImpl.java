@@ -15,6 +15,9 @@ import android.content.Context;
 import com.gangle.nble.Record.StatusChangeRecord;
 import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,23 +120,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      * 设置notification的状态
      */
     public void subscribe(UUID serviceUuid, UUID characteristicUuid, boolean enable) {
-        if (bleGatt == null) {
-            LogUtils.e("gatt not connected: %s", getAddress());
-        } else {
-            BluetoothGattService service = bleGatt.getService(serviceUuid);
-            if (service != null) {
-                BluetoothGattCharacteristic chara = service.getCharacteristic(characteristicUuid);
-                if (chara != null) {
-                    bleGatt.setCharacteristicNotification(chara, enable);
-                    BluetoothGattDescriptor descriptor = chara.getDescriptor(DESCRIPTOR_ENABLE_NOTIFICATION);
-                    descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-                    boolean writeSuccess = bleGatt.writeDescriptor(descriptor);
-                    LogUtils.i("subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, writeSuccess ? "success" : "fail");
-                    return;
-                }
-            }
+        try {
+            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
+            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
+            BluetoothGattCharacteristic chara = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
+            bleGatt.setCharacteristicNotification(chara, enable);
+            BluetoothGattDescriptor descriptor = chara.getDescriptor(DESCRIPTOR_ENABLE_NOTIFICATION);
+            descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+            Preconditions.checkState(bleGatt.writeDescriptor(descriptor), "subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, "fail");
+
+            LogUtils.i("subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, "success");
+        } catch (Exception e) {
+            LogUtils.e(e.getMessage());
         }
-        LogUtils.w("subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, "fail");
     }
 
     /**
@@ -145,33 +144,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-        boolean retValue = true;
-        if (bleGatt == null) {
-            LogUtils.e("gatt not connected: %s", getAddress());
-            retValue = false;
-        } else {
-            BluetoothGattService service = bleGatt.getService(serviceUuid);
-            if (service == null) {
-                LogUtils.e("service null: %s", serviceUuid.toString());
-                retValue = false;
-            } else {
+        try {
+            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
+            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
+            BluetoothGattCharacteristic characteristic = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
+            characteristic.setValue(data);
+            Preconditions.checkState(bleGatt.writeCharacteristic(characteristic), "write Characteristic Fail!");
 
-                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-                if (characteristic == null) {
-                    LogUtils.e("characteristic null: %s", characteristicUuid.toString());
-                    retValue = false;
-                } else {
-                    characteristic.setValue(data);
-                    retValue = bleGatt.writeCharacteristic(characteristic);
-                    LogUtils.i("writeCharacteristic result: %b", retValue);
-                }
-            }
-        }
-        if (!retValue) {
             manager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
+        } catch (Exception e) {
+            LogUtils.e(e.getMessage());
+            return false;
         }
-
-        return retValue;
+        return true;
     }
 
     /**
@@ -183,40 +168,22 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     }
 
     public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
-        boolean retValue = true;
-        if (bleGatt == null) {
-            LogUtils.e("gatt not connected: %s", getAddress());
-            retValue = false;
-        } else {
-            BluetoothGattService service = null;
-            try {
-                service = bleGatt.getService(serviceUuid);
-            } catch (Exception e) {
-                LogUtils.e(e.getMessage());
-            }
-            if (service == null) {
-//            LogUtils.e("service null: %s", serviceUuid.toString());
-//            LogUtils.e("service count: %d", bleGatt.getServices().size());
-//            for (BluetoothGattService ser : bleGatt.getServices()) {
-//                LogUtils.e("service uuid: %s", ser.getUuid().toString());
-//            }
-                retValue = false;
-            } else {
-                BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-                if (characteristic == null) {
-                    LogUtils.e("characteristic null: %s", characteristicUuid.toString());
-                    retValue = false;
-                } else {
-                    retValue = bleGatt.readCharacteristic(characteristic);
-                    LogUtils.i("readCharacteristic result: %b", retValue);
-                }
-            }
-        }
+        try {
+            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
+            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
+            BluetoothGattCharacteristic characteristic = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
+            Preconditions.checkState(bleGatt.readCharacteristic(characteristic), "read Characteristic Fail!");
 
-        if (!retValue) {
             manager().onReadCharacteristic(getAddress(), characteristicUuid, null);
+        } catch (Exception e) {
+            LogUtils.e(e.getMessage());
+            return false;
         }
-        return retValue;
+        return true;
+    }
+
+    public void onServicesDiscovered(String address) {
+        getNotifyFunction().onServicesDiscovered(context, address);
     }
 
     public void onReadImpl(String address, UUID uuid, byte[] value) {
@@ -235,12 +202,12 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      * 请求Rssi值。
      */
     public synchronized void requestRemoteRssi() {
-        if (bleGatt == null) {
-            LogUtils.e("gatt not connected: %s", getAddress());
-            return;
+        try {
+            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
+            bleGatt.readRemoteRssi();
+        } catch (Exception e) {
+            LogUtils.e(e.getMessage());
         }
-
-        bleGatt.readRemoteRssi();
     }
 
 
@@ -460,8 +427,6 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-
-
             LogUtils.d("Discovered: addr:%s, name:%s", gatt.getDevice().getAddress(), gatt.getDevice().getName());
             List<BluetoothGattService> services = gatt.getServices();
 
@@ -470,6 +435,8 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                     LogUtils.v("service uuid: %s, characteristic uuid: %s, properties:0x%X", service.getUuid(), chara.getUuid(), chara.getProperties());
                 }
             }
+
+            manager().onServicesDiscovered(gatt.getDevice().getAddress());
         }
 
         @Override
