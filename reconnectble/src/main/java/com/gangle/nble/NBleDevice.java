@@ -29,6 +29,11 @@ public interface NBleDevice {
     Integer getRssi();
 
     /**
+     * 设置notification的状态
+     */
+    void subscribe(UUID serviceUuid, UUID characteristicUuid, boolean enable);
+
+    /**
      * 写数据
      */
     void write(UUID serviceUuid, UUID characteristicUuid, byte[] data);

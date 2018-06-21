@@ -48,6 +48,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -82,6 +83,8 @@ public class ScanActivity extends AppCompatActivity
     private final static int MENU_ITEM_REMOVE_MAINTAIN = 2;
     private final static int MENU_ITEM_CONNECT = 3;
     private final static int MENU_ITEM_DISCONNECT = 4;
+    public static UUID SERVICES_FIND_UUID = UUID.fromString("03b80e5a-ede8-4b33-a751-6ce34ec4c712");
+    public static UUID CHARACTERISTICS_CONTROL_UUID = UUID.fromString("7772e5db-3868-4112-a1a9-f2669d106b34");
 
     @BindView(R.id.content_scan)
     ConstraintLayout constraintLayout;
@@ -174,10 +177,14 @@ public class ScanActivity extends AppCompatActivity
     public void onDeviceStateEvent(DeviceStateEvent event) {
         if (event instanceof DeviceStateEvent) {
             Timber.d("get a event, %s", event.toString());
-            NBleDevice deviceInfo = getDeviceInfo(event.address);
-            if (deviceInfo != null) {
-                int index = devList.indexOf(deviceInfo);
+            NBleDevice device = getDeviceInfo(event.address);
+            if (device != null) {
+                int index = devList.indexOf(device);
                 recyclerView.getAdapter().notifyItemChanged(index);
+            }
+
+            if (event.type == DeviceStateEvent.CONNECTED) {
+                device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
             }
         }
     }

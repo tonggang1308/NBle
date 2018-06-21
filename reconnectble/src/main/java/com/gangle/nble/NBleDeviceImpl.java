@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothServerSocket;
 import android.content.Context;
 
 import com.gangle.nble.Record.StatusChangeRecord;
@@ -110,6 +111,29 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     protected void recordStatus(int status) {
         statusRecordList.add(new StatusChangeRecord(status));
+    }
+
+    /**
+     * 设置notification的状态
+     */
+    public void subscribe(UUID serviceUuid, UUID characteristicUuid, boolean enable) {
+        if (bleGatt == null) {
+            LogUtils.e("gatt not connected: %s", getAddress());
+        } else {
+            BluetoothGattService service = bleGatt.getService(serviceUuid);
+            if (service != null) {
+                BluetoothGattCharacteristic chara = service.getCharacteristic(characteristicUuid);
+                if (chara != null) {
+                    bleGatt.setCharacteristicNotification(chara, enable);
+                    BluetoothGattDescriptor descriptor = chara.getDescriptor(DESCRIPTOR_ENABLE_NOTIFICATION);
+                    descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                    boolean writeSuccess = bleGatt.writeDescriptor(descriptor);
+                    LogUtils.i("subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, writeSuccess ? "success" : "fail");
+                    return;
+                }
+            }
+        }
+        LogUtils.w("subscribe %s %s %s", enable ? "ON" : "OFF", characteristicUuid, "fail");
     }
 
     /**
@@ -436,19 +460,14 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
+
             LogUtils.d("Discovered: addr:%s, name:%s", gatt.getDevice().getAddress(), gatt.getDevice().getName());
             List<BluetoothGattService> services = gatt.getServices();
 
             for (BluetoothGattService service : services) {
                 for (BluetoothGattCharacteristic chara : service.getCharacteristics()) {
-
-                    if ((chara.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        gatt.setCharacteristicNotification(chara, true);
-                        BluetoothGattDescriptor descriptor = chara.getDescriptor(DESCRIPTOR_ENABLE_NOTIFICATION);
-                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                        boolean writeSuccess = gatt.writeDescriptor(descriptor);
-                        LogUtils.i("writeSuccess %s", writeSuccess);
-                    }
+                    LogUtils.v("service uuid: %s, characteristic uuid: %s, properties:0x%X", service.getUuid(), chara.getUuid(), chara.getProperties());
                 }
             }
         }
