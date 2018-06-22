@@ -2,16 +2,16 @@ package xyz.gangle.bleconnector.data;
 
 import android.content.Context;
 
+import com.gangle.nble.DeviceStateEvent;
+import com.gangle.nble.ifunction.INBleNotifyFunction;
+import com.gangle.util.CommonUtil;
+
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.UUID;
 
-import com.tggg.nble.ifunction.IBleNotifyFunction;
-import com.tggg.util.CommonUtil;
-import com.tggg.nble.DeviceStateEvent;
 
-
-public class BaseBleNotifyFunction implements IBleNotifyFunction {
+public class BaseBleNotifyFunction implements INBleNotifyFunction {
 
     @Override
     public UUID[] getNotifyUuid() {
@@ -21,11 +21,6 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     @Override
     public void onNotify(Context context, String address, UUID uuid, byte[] value) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.NOTIFY, address, uuid, value));
-    }
-
-    @Override
-    public void onClose(Context context, String address) {
-        postEvent(new DeviceStateEvent(DeviceStateEvent.CLOSE, address));
     }
 
     @Override
@@ -39,8 +34,18 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     }
 
     @Override
+    public void onConnectStart(Context context, String address) {
+        postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECT_START, address));
+    }
+
+    @Override
     public void onConnected(Context context, String address) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECTED, address));
+    }
+
+    @Override
+    public void onServicesDiscovered(Context context, String address){
+        postEvent(new DeviceStateEvent(DeviceStateEvent.DISCOVERED, address));
     }
 
     @Override
@@ -49,8 +54,13 @@ public class BaseBleNotifyFunction implements IBleNotifyFunction {
     }
 
     @Override
-    public void onDisConnected(Context context, String address) {
+    public void onDisconnected(Context context, String address) {
         postEvent(new DeviceStateEvent(DeviceStateEvent.DISCONNECTED, address));
+    }
+
+    @Override
+    public void onConnectFinish(Context context, String address) {
+        postEvent(new DeviceStateEvent(DeviceStateEvent.CONNECT_FINISH, address));
     }
 
     @Override
