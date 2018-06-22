@@ -9,15 +9,12 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothServerSocket;
 import android.content.Context;
 
 import com.gangle.nble.Record.StatusChangeRecord;
 import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Supplier;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +27,6 @@ import rx.functions.Action1;
  * Created by Gang Tong.
  */
 class NBleDeviceImpl extends DeviceBase implements NBleDevice {
-
-    public static UUID SERVICES_DEVICE_INFO_UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb");
-    public static UUID CHARACTERISTICS_SOFTWARE_UUID = UUID.fromString("00002a28-0000-1000-8000-00805f9b34fb");
-
 
     /**
      * Enable Notification的UUID
@@ -357,32 +350,28 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             final String address = gatt.getDevice().getAddress();
-            String deviceName = gatt.getDevice().getName();
             NBleDevice device = manager().getDevice(address);
-
             LogUtils.i(getName() + ", " + address + ", Connection status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
+
+//            String deviceName = gatt.getDevice().getName();
+//            // 更新device name
+//            if (deviceName != null) {
+//                setName(deviceName);
+//            }
 
             try {
                 isConnecting = false;
                 switch (newState) {
                     case BluetoothProfile.STATE_CONNECTED:
-                        if (status == BluetoothGatt.GATT_SUCCESS) {
-                            // 更新device name
-                            if (deviceName != null) {
-                                setName(deviceName);
-                            }
 
-                            recordStatus(StatusChangeRecord.CONNECTED);
+                        Preconditions.checkState(status == BluetoothGatt.GATT_SUCCESS,
+                                "connect fail, status is 0x%X", status);
 
-                            gatt.discoverServices();
+                        recordStatus(StatusChangeRecord.CONNECTED);
 
-                            getNotifyFunction().onConnected(context, gatt.getDevice().getAddress());
-                        } else {
-                            // status == GATT_ERROR
-                            // 异常断开，需要close后重连
-                            recordStatus(StatusChangeRecord.CONNECTED_ERROR);
-                            throw new IllegalStateException();
-                        }
+                        gatt.discoverServices();
+
+                        getNotifyFunction().onConnected(context, gatt.getDevice().getAddress());
                         break;
                     case BluetoothProfile.STATE_DISCONNECTED:
 
@@ -390,37 +379,27 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         // 如果用户主动disconnect，需要手动removeFromMaintain，否则也会重新连接。
                         recordStatus(StatusChangeRecord.DISCONNECTED);
 
-                        getNotifyFunction().onDisconnected(context, gatt.getDevice().getAddress());
+                        getNotifyFunction().onDisconnected(context, address);
 
-                        if (bluetoothAdapter.isEnabled() && manager().isMaintain(device)) {
-                            LogUtils.d("Device " + address + " is in maintain list");
-                            if (status == BluetoothGatt.GATT_SUCCESS) {
-                                LogUtils.i(address + " gatt.connectImpl()");
-                                if (gatt.connect()) {
-                                    LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
-                                    isConnecting = true;
-                                    recordStatus(StatusChangeRecord.AUTOCONNECT);
-                                    getNotifyFunction().onConnecting(context, gatt.getDevice().getAddress());
-                                } else {
-                                    LogUtils.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
-                                    recordStatus(StatusChangeRecord.AUTOCONNECT_FAIL);
-                                    throw new IllegalStateException();
-                                }
-                            } else {
-                                // status == GATT_FAILURE, 属于connectGatt时,registerClient失败，需要close后重连
-                                // status == 133, 属于异常断开，需要close后重连
-                                throw new IllegalStateException();
-                            }
-                        } else {
-                            LogUtils.d("bluetooth adapter is DISABLE or NOT in maintain list.");
-                            throw new IllegalStateException();
+                        // status == GATT_FAILURE, 属于connectGatt时,registerClient失败，需要close后重连
+                        // status == 133, 属于异常断开，需要close后重连
+                        Preconditions.checkState((status == BluetoothGatt.GATT_SUCCESS), "Abnormal disconnect!");
+
+                        Preconditions.checkState(bluetoothAdapter.isEnabled(), "bluetooth adapter is DISABLE");
+
+                        if (manager().isMaintain(device)) {
+                            Preconditions.checkState(gatt.connect(), "gatt.connectImpl() fail");
+                            LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
+                            isConnecting = true;
+                            recordStatus(StatusChangeRecord.AUTOCONNECT);
+                            getNotifyFunction().onConnecting(context, gatt.getDevice().getAddress());
                         }
-                        break;
+
                     default:
                         // NO OP
                 }
             } catch (Exception e) {
-
+                recordStatus(StatusChangeRecord.CONNECTED_ERROR);
                 manager().onConnectException(NBleDeviceImpl.this, status);
             }
         }
