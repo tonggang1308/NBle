@@ -16,17 +16,20 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
+
 
 /**
  * Created by Gang Tong
  * <p/>
  * 连接描述：ble设备的连接策略基本上是用户发起的连接，是'直接'连接。当直接连接不上返回exception后，并且是维护状态时，再次连接就采用'自动'连接。
  */
-class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener, OperationManager.OnValidateOperationListener {
+class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptionListener {
 
     /**
      * 记录的devices
@@ -44,6 +47,8 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      */
     private INBleNotifyFunction mDefaultSubscription;
 
+    public OperationManager operationManager = new OperationManager();
+
     /**
      * 禁止外部新建实例
      */
@@ -52,8 +57,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     private Context context;
-
-    private Operation currentOperation;
 
     /**
      * 单例
@@ -206,13 +209,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     }
 
     /**
-     * 直接连接设备
-     */
-    public boolean connectDirectly(NBleDevice bleDevice) {
-        return ((NBleDeviceImpl) bleDevice).connectImpl(false);
-    }
-
-    /**
      * 断开设备
      */
     public void disconnect(NBleDevice bleDevice) {
@@ -220,63 +216,6 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
         // 在连接过程中做disconnect，会导致连接中断，且没有回调。
         // 所以每次重连需要先做close，以及后续的判断处理。
         reconnect(bleDevice);
-    }
-
-    public void writeCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-        OperationManager.getInstance().pend(new Operation(Operation.OP_WRITE_CHARACTERISTIC, address, serviceUuid, characteristicUuid, data));
-    }
-
-    public void readCharacteristic(String address, UUID serviceUuid, UUID characteristicUuid) {
-        OperationManager.getInstance().pend(new Operation(Operation.OP_READ_CHARACTERISTIC, address, serviceUuid, characteristicUuid));
-    }
-
-    public void onServicesDiscovered(String address) {
-        ((NBleDeviceImpl) getDevice(address)).onServicesDiscovered(address);
-    }
-
-
-    public void onReadCharacteristic(String address, UUID uuid, byte[] value) {
-
-        synchronized (currentOperation) {
-            OperationManager.getInstance().done(currentOperation);
-            currentOperation = null;
-        }
-
-        ((NBleDeviceImpl) getDevice(address)).onReadImpl(address, uuid, value);
-    }
-
-    public void onWriteCharacteristic(String address, UUID uuid, byte[] value) {
-
-        synchronized (currentOperation) {
-            OperationManager.getInstance().done(currentOperation);
-            currentOperation = null;
-        }
-
-        ((NBleDeviceImpl) getDevice(address)).onWriteImpl(address, uuid, value);
-    }
-
-    @Override
-    public void onNextPendingOperation(Operation operation) {
-        synchronized (currentOperation) {
-            if (currentOperation == null) {
-                NBleDeviceImpl device = (NBleDeviceImpl) getDevice(operation.getAddress());
-                if (device != null && device.getConnectionState() == BluetoothProfile.STATE_CONNECTED) {
-                    currentOperation = operation;
-                    switch (operation.getType()) {
-                        case Operation.OP_READ_CHARACTERISTIC:
-                            device.readImpl(operation.getServiceUuid(), operation.getCharacteristicUuid());
-                            break;
-                        case Operation.OP_WRITE_CHARACTERISTIC:
-                            device.writeImpl(operation.getServiceUuid(), operation.getCharacteristicUuid(), operation.getData());
-                            break;
-                    }
-                } else {
-                    OperationManager.getInstance().done(operation);
-                }
-            } else {
-                LogUtils.w("currentOperation != null");
-            }
-        }
     }
 
     /**
@@ -319,43 +258,44 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
     protected void reconnect(final NBleDevice device) {
         Observable.just(device)
                 .subscribeOn(Schedulers.newThread())
-                .map(new Func1<NBleDevice, NBleDevice>() {
+                .map(new Function<NBleDevice, NBleDevice>() {
                     @Override
-                    public NBleDevice call(NBleDevice device) {
+                    public NBleDevice apply(NBleDevice device) throws Exception {
                         ((NBleDeviceImpl) device).close();
                         return device;
                     }
                 })
-                .filter(new Func1<NBleDevice, Boolean>() {
+                .filter(new Predicate<NBleDevice>() {
                     @Override
-                    public Boolean call(NBleDevice device) {
+                    public boolean test(NBleDevice device) throws Exception {
                         return NBleUtil.isAdapterEnable(context) && NBleDeviceManagerImpl.getInstance().isMaintain(device);
                     }
                 })
                 .delay(2, TimeUnit.SECONDS)
-                .subscribeOn(Schedulers.immediate())
-                .map(new Func1<NBleDevice, Boolean>() {
+                .subscribeOn(Schedulers.io())
+                .map(new Function<NBleDevice, Boolean>() {
                     @Override
-                    public Boolean call(NBleDevice device) {
-                        return connectDirectly(device);
+                    public Boolean apply(NBleDevice device) throws Exception {
+                        return ((NBleDeviceImpl) device).connectDirectly();
                     }
                 })
-                .subscribe(new Observer<Boolean>() {
+                .subscribe(new Consumer<Boolean>() {
                     @Override
-                    public void onCompleted() {
+                    public void accept(Boolean aBoolean) throws Exception {
 
                     }
-
+                }, new Consumer<Throwable>() {
                     @Override
-                    public void onError(Throwable e) {
+                    public void accept(Throwable throwable) throws Exception {
                         reconnect(device);
                     }
-
+                }, new Action() {
                     @Override
-                    public void onNext(Boolean s) {
+                    public void run() throws Exception {
 
                     }
                 });
+
     }
 
     @Override

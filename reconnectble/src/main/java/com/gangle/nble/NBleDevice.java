@@ -8,6 +8,8 @@ import com.gangle.nble.ifunction.INBleNotifyFunction;
 import java.util.List;
 import java.util.UUID;
 
+import io.reactivex.Observable;
+
 /**
  * Created by Gang Tong.
  */
