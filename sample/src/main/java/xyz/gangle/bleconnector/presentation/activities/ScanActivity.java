@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -115,6 +116,7 @@ public class ScanActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan);
         ButterKnife.bind(this);
+        EventBus.getDefault().register(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -179,18 +181,22 @@ public class ScanActivity extends AppCompatActivity
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDeviceStateEvent(DeviceStateEvent event) {
-        if (event instanceof DeviceStateEvent) {
-            Timber.d("get a event, %s", event.toString());
-            NBleDevice device = getDeviceInfo(event.address);
-            if (device != null) {
-                int index = devList.indexOf(device);
-                recyclerView.getAdapter().notifyItemChanged(index);
-            }
+    public void onDeviceStateEvent(final DeviceStateEvent event) {
+        if (!ScanActivity.this.isFinishing()) {
+            if (event instanceof DeviceStateEvent) {
+                Timber.d("get a event, %s", event.toString());
 
-            // enable notifications
-            if (event.type == DeviceStateEvent.DISCOVERED) {
-                device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
+
+                NBleDevice device = getDeviceInfo(event.address);
+                if (device != null) {
+                    int index = devList.indexOf(device);
+                    recyclerView.getAdapter().notifyItemChanged(index);
+                }
+
+                // enable notifications
+                if (event.type == DeviceStateEvent.DISCOVERED) {
+                    device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
+                }
             }
         }
     }
@@ -670,15 +676,8 @@ public class ScanActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    protected void onStop() {
+    public void onDestroy() {
+        super.onDestroy();
         EventBus.getDefault().unregister(this);
-        super.onStop();
     }
-
 }

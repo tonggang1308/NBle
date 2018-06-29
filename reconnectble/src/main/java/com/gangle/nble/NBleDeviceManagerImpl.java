@@ -5,6 +5,7 @@ import android.content.Context;
 
 import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
+import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -256,8 +256,15 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
      * 所以每次重连需要先做close，以及后续的判断处理。
      */
     protected void reconnect(final NBleDevice device) {
-        Observable.just(device)
+        Observable observable = Observable.just(device)
                 .subscribeOn(Schedulers.newThread())
+                .filter(new Predicate<NBleDevice>() {
+                    @Override
+                    public boolean test(NBleDevice device) throws Exception {
+                        return (device.getConnectionState() != BluetoothProfile.STATE_CONNECTED)
+                                && (device.getConnectionState() != BluetoothProfile.STATE_CONNECTING);
+                    }
+                })
                 .map(new Function<NBleDevice, NBleDevice>() {
                     @Override
                     public NBleDevice apply(NBleDevice device) throws Exception {
@@ -279,28 +286,56 @@ class NBleDeviceManagerImpl implements NBleDeviceManager, IDeviceConnectExceptio
                         return ((NBleDeviceImpl) device).connectDirectly();
                     }
                 })
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean aBoolean) throws Exception {
-
-                    }
-                }, new Consumer<Throwable>() {
+                .doOnError(new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         reconnect(device);
                     }
-                }, new Action() {
-                    @Override
-                    public void run() throws Exception {
-
-                    }
                 });
 
+        operationManager.pend(observable);
+//                .subscribe(new Consumer<Boolean>() {
+//                    @Override
+//                    public void accept(Boolean aBoolean) throws Exception {
+//
+//                    }
+//                }, new Consumer<Throwable>() {
+//                    @Override
+//                    public void accept(Throwable throwable) throws Exception {
+//                        reconnect(device);
+//                    }
+//                }, new Action() {
+//                    @Override
+//                    public void run() throws Exception {
+//
+//                    }
+//                });
+
     }
 
+
+    /**
+     * device 断开异常的监听，用来做后续的处理。
+     *
+     * @param device
+     * @param e
+     */
     @Override
-    public void onConnectException(NBleDevice device, int status) {
-        reconnect(device);
-    }
+    public void onDisconnected(NBleDevice device, Exception e) {
+        try {
+            if (isMaintain(device)) {
+                if (e == null) {
+                    // 如果正常断开，则可以尝试自动连接。
+                    Preconditions.checkState(((NBleDeviceImpl) device).connectAuto(), "gatt.connectImpl() fail");
+                } else {
+                    // 如果异常断开，则走重连的过程。
+                    reconnect(device);
+                }
+            }
+        } catch (Exception exception) {
+            reconnect(device);
+        }
 
+
+    }
 }

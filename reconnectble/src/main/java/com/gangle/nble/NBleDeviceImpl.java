@@ -26,8 +26,9 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+
+import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE;
 
 
 /**
@@ -150,6 +151,11 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                     characteristic.setValue(data);
                     Preconditions.checkState(bleGatt.writeCharacteristic(characteristic), "write Characteristic Fail!");
 
+                    // 如果此characteristic是没有返回值的
+                    if ((characteristic.getWriteType() & WRITE_TYPE_NO_RESPONSE) == 0) {
+                        mEmitter.onComplete();
+                    }
+
                 } catch (Exception e) {
                     LogUtils.e(e.getMessage());
                     mEmitter.onError(new Throwable(e.getMessage()));
@@ -159,7 +165,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             @Override
             public void accept(Object data) throws Exception {
                 LogUtils.d("Write confirm: " + getAddress() + "))" + data);
-                getNotifyFunction().onWrite(context, getAddress(), characteristicUuid, (byte[])data);
+                getNotifyFunction().onWrite(context, getAddress(), characteristicUuid, (byte[]) data);
             }
         }).doOnError(new Consumer<Throwable>() {
             @Override
@@ -193,7 +199,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
             @Override
             public void accept(Object data) throws Exception {
                 LogUtils.d("Read from: " + getAddress() + "))" + data);
-                getNotifyFunction().onRead(context, getAddress(), characteristicUuid, (byte[])data);
+                getNotifyFunction().onRead(context, getAddress(), characteristicUuid, (byte[]) data);
             }
         }).doOnError(new Consumer<Throwable>() {
             @Override
@@ -291,6 +297,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         return connectDirectly();
     }
 
+    /**
+     * Auto connect to the device
+     */
+    public boolean connectAuto() {
+        // 正常断开后，如果需要重连，则继续重连
+        if (bleGatt.connect()) {
+            LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", getAddress());
+            isConnecting = true;
+            recordStatus(StatusChangeRecord.AUTOCONNECT);
+            getNotifyFunction().onConnecting(context, getAddress());
+        } else return false;
+        return true;
+    }
 
     /**
      * Connect to the device directly
@@ -375,7 +394,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             final String address = gatt.getDevice().getAddress();
             NBleDevice device = manager().getDevice(address);
-            LogUtils.i(getName() + ", " + address + ", Connection status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
+            LogUtils.i(getName() + ", " + address + ", operation result: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
 
 //            String deviceName = gatt.getDevice().getName();
 //            // 更新device name
@@ -409,22 +428,19 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         // status == 133, 属于异常断开，需要close后重连
                         Preconditions.checkState((status == BluetoothGatt.GATT_SUCCESS), "Abnormal disconnect!");
 
-                        Preconditions.checkState(bluetoothAdapter.isEnabled(), "bluetooth adapter is DISABLE");
+                        close();
 
-                        if (manager().isMaintain(device)) {
-                            Preconditions.checkState(gatt.connect(), "gatt.connectImpl() fail");
-                            LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
-                            isConnecting = true;
-                            recordStatus(StatusChangeRecord.AUTOCONNECT);
-                            getNotifyFunction().onConnecting(context, gatt.getDevice().getAddress());
-                        }
-
+                        // 正常断开后，通知manager
+                        manager().onDisconnected(device, null);
                     default:
                         // NO OP
                 }
             } catch (Exception e) {
                 recordStatus(StatusChangeRecord.CONNECTED_ERROR);
-                manager().onConnectException(NBleDeviceImpl.this, status);
+                getNotifyFunction().onDisconnected(context, address);
+                close();
+                // 异常断开后，通知manager
+                manager().onDisconnected(device, e);
             }
         }
 
