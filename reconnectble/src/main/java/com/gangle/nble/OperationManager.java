@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.logging.Handler;
 
 import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 
@@ -15,7 +16,7 @@ import io.reactivex.functions.Consumer;
 final class OperationManager {
 
     private List<Observable> operationList = Collections.synchronizedList(new ArrayList<Observable>());
-    private Observable curObservable = null;
+    private Disposable curDisposable = null;
 
     /**
      * "添加"操作
@@ -33,10 +34,10 @@ final class OperationManager {
             @Override
             public void run() {
                 synchronized (OperationManager.this) {
-                    if (null == curObservable && operationList.size() > 0) {
-                        curObservable = operationList.remove(0);
+                    if ((null == curDisposable || curDisposable.isDisposed()) && operationList.size() > 0) {
+                        Observable curObservable = operationList.remove(0);
                         if (null != curObservable) {
-                            curObservable.subscribe(new Consumer() {
+                            curDisposable = curObservable.subscribe(new Consumer() {
                                 @Override
                                 public void accept(Object o) throws Exception {
 
@@ -44,13 +45,11 @@ final class OperationManager {
                             }, new Consumer<Throwable>() {
                                 @Override
                                 public void accept(Throwable throwable) throws Exception {
-                                    curObservable = null;
                                     OperationManager.this.trigger();
                                 }
                             }, new Action() {
                                 @Override
                                 public void run() throws Exception {
-                                    curObservable = null;
                                     OperationManager.this.trigger();
                                 }
                             });
