@@ -9,32 +9,34 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothServerSocket;
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import com.gangle.nble.Record.StatusChangeRecord;
 import com.gangle.nble.device.DeviceBase;
 import com.gangle.nble.ifunction.INBleNotifyFunction;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Supplier;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Consumer;
+
+import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE;
+
 
 /**
  * Created by Gang Tong.
  */
 class NBleDeviceImpl extends DeviceBase implements NBleDevice {
 
-    public static UUID SERVICES_DEVICE_INFO_UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb");
-    public static UUID CHARACTERISTICS_SOFTWARE_UUID = UUID.fromString("00002a28-0000-1000-8000-00805f9b34fb");
-
-
+    private static final int OPERATION_TIME_OUT = 5;
     /**
      * Enable Notification的UUID
      */
@@ -43,6 +45,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
     private Context context;
     private BluetoothGatt bleGatt;
     private BluetoothAdapter bluetoothAdapter;
+    private ObservableEmitter<Object> mEmitter;
 
     /**
      * rssi 信号值
@@ -121,9 +124,7 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public void subscribe(UUID serviceUuid, UUID characteristicUuid, boolean enable) {
         try {
-            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
-            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
-            BluetoothGattCharacteristic chara = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
+            BluetoothGattCharacteristic chara = getCharacteristic(bleGatt, serviceUuid, characteristicUuid);
             bleGatt.setCharacteristicNotification(chara, enable);
             BluetoothGattDescriptor descriptor = chara.getDescriptor(DESCRIPTOR_ENABLE_NOTIFICATION);
             descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
@@ -139,59 +140,83 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      * write接口，把操作丢给manager来管理
      */
     @Override
-    public void write(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-        manager().writeCharacteristic(getAddress(), serviceUuid, characteristicUuid, data);
-    }
+    public synchronized void write(final UUID serviceUuid, final UUID characteristicUuid, final byte[] data) {
+        Observable observable = Observable.create(new ObservableOnSubscribe<Object>() {
+            @Override
+            public void subscribe(ObservableEmitter<Object> emitter) throws Exception {
+                mEmitter = emitter;
+                try {
+                    BluetoothGattCharacteristic characteristic = getCharacteristic(bleGatt, serviceUuid, characteristicUuid);
+                    // 需要写入的数据
+                    characteristic.setValue(data);
+                    Preconditions.checkState(bleGatt.writeCharacteristic(characteristic), "write Characteristic Fail!");
 
-    public synchronized boolean writeImpl(UUID serviceUuid, UUID characteristicUuid, byte[] data) {
-        try {
-            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
-            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
-            BluetoothGattCharacteristic characteristic = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
-            characteristic.setValue(data);
-            Preconditions.checkState(bleGatt.writeCharacteristic(characteristic), "write Characteristic Fail!");
+                    // 如果此characteristic是没有返回值的
+                    if ((characteristic.getWriteType() & WRITE_TYPE_NO_RESPONSE) == 0) {
+                        mEmitter.onComplete();
+                    }
 
-            manager().onWriteCharacteristic(getAddress(), characteristicUuid, null);
-        } catch (Exception e) {
-            LogUtils.e(e.getMessage());
-            return false;
-        }
-        return true;
+                } catch (Exception e) {
+                    LogUtils.e(e.getMessage());
+                    mEmitter.onError(new Throwable(e.getMessage()));
+                }
+            }
+        }).doOnNext(new Consumer<Object>() {
+            @Override
+            public void accept(Object data) throws Exception {
+                LogUtils.d("Write confirm: " + getAddress() + "))" + data);
+                getNotifyFunction().onWrite(context, getAddress(), characteristicUuid, (byte[]) data);
+            }
+        }).doOnError(new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                getNotifyFunction().onWrite(context, getAddress(), characteristicUuid, null);
+            }
+        }).timeout(OPERATION_TIME_OUT, TimeUnit.SECONDS);
+
+        // 添加到执行队列
+        manager().operationManager.pend(observable);
     }
 
     /**
      * read接口，把操作丢给manager来管理
      */
     @Override
-    public void read(UUID serviceUuid, UUID characteristicUuid) {
-        manager().readCharacteristic(getAddress(), serviceUuid, characteristicUuid);
+    public synchronized void read(final UUID serviceUuid, final UUID characteristicUuid) {
+        Observable observable = Observable.create(new ObservableOnSubscribe<Object>() {
+            @Override
+            public void subscribe(ObservableEmitter<Object> emitter) throws Exception {
+                mEmitter = emitter;
+                try {
+                    BluetoothGattCharacteristic characteristic = getCharacteristic(bleGatt, serviceUuid, characteristicUuid);
+                    Preconditions.checkState(bleGatt.readCharacteristic(characteristic), "read Characteristic Fail!");
+                } catch (Exception e) {
+                    LogUtils.e(e.getMessage());
+                    mEmitter.onError(new Throwable(e.getMessage()));
+                }
+            }
+        }).doOnNext(new Consumer<Object>() {
+            @Override
+            public void accept(Object data) throws Exception {
+                LogUtils.d("Read from: " + getAddress() + "))" + data);
+                getNotifyFunction().onRead(context, getAddress(), characteristicUuid, (byte[]) data);
+            }
+        }).doOnError(new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                getNotifyFunction().onRead(context, getAddress(), characteristicUuid, null);
+            }
+        }).timeout(OPERATION_TIME_OUT, TimeUnit.SECONDS);
+
+        // 添加到执行队列
+        manager().operationManager.pend(observable);
     }
 
-    public synchronized boolean readImpl(UUID serviceUuid, UUID characteristicUuid) {
-        try {
-            Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
-            BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
-            BluetoothGattCharacteristic characteristic = Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
-            Preconditions.checkState(bleGatt.readCharacteristic(characteristic), "read Characteristic Fail!");
-
-            manager().onReadCharacteristic(getAddress(), characteristicUuid, null);
-        } catch (Exception e) {
-            LogUtils.e(e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
-    public void onServicesDiscovered(String address) {
-        getNotifyFunction().onServicesDiscovered(context, address);
-    }
-
-    public void onReadImpl(String address, UUID uuid, byte[] value) {
-        getNotifyFunction().onRead(context, address, uuid, value);
-    }
-
-    public void onWriteImpl(String address, UUID uuid, byte[] value) {
-        getNotifyFunction().onWrite(context, address, uuid, value);
+    @NonNull
+    protected BluetoothGattCharacteristic getCharacteristic(BluetoothGatt bleGatt, UUID serviceUuid, UUID characteristicUuid) {
+        Preconditions.checkNotNull(bleGatt, "gatt not connected: %s", getAddress());
+        BluetoothGattService service = Preconditions.checkNotNull(bleGatt.getService(serviceUuid), "service null: %s", serviceUuid.toString());
+        return Preconditions.checkNotNull(service.getCharacteristic(characteristicUuid), "characteristic null: %s", characteristicUuid.toString());
     }
 
     public INBleNotifyFunction getNotifyFunction() {
@@ -269,7 +294,28 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
      */
     public boolean connect() {
         // 当直接连接时候，一般都由于经过scan后找到的。所以，autoConnection设为false
-        return manager().connectDirectly(this);
+        return connectDirectly();
+    }
+
+    /**
+     * Auto connect to the device
+     */
+    public boolean connectAuto() {
+        // 正常断开后，如果需要重连，则继续重连
+        if (bleGatt.connect()) {
+            LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", getAddress());
+            isConnecting = true;
+            recordStatus(StatusChangeRecord.AUTOCONNECT);
+            getNotifyFunction().onConnecting(context, getAddress());
+        } else return false;
+        return true;
+    }
+
+    /**
+     * Connect to the device directly
+     */
+    public boolean connectDirectly() {
+        return connectImpl(false);
     }
 
     /**
@@ -342,47 +388,33 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
         }
     }
 
-    Action1<String> closeAction = new Action1<String>() {
-        @Override
-        public void call(String address) {
-            synchronized (NBleDeviceImpl.this) {
-                LogUtils.i("Start Close Action to close device " + address);
-                // close device
-                close();
-            }
-        }
-    };
 
     private final BluetoothGattCallback gattCallBack = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             final String address = gatt.getDevice().getAddress();
-            String deviceName = gatt.getDevice().getName();
             NBleDevice device = manager().getDevice(address);
+            LogUtils.i(getName() + ", " + address + ", operation result: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
 
-            LogUtils.i(getName() + ", " + address + ", Connection status: " + NBleUtil.statusToString(status) + ", New connection state: " + NBleUtil.connectionStateToString(newState) + ", " + getNotifyFunction().getClass().getSimpleName());
+//            String deviceName = gatt.getDevice().getName();
+//            // 更新device name
+//            if (deviceName != null) {
+//                setName(deviceName);
+//            }
 
             try {
                 isConnecting = false;
                 switch (newState) {
                     case BluetoothProfile.STATE_CONNECTED:
-                        if (status == BluetoothGatt.GATT_SUCCESS) {
-                            // 更新device name
-                            if (deviceName != null) {
-                                setName(deviceName);
-                            }
 
-                            recordStatus(StatusChangeRecord.CONNECTED);
+                        Preconditions.checkState(status == BluetoothGatt.GATT_SUCCESS,
+                                "connect fail, status is 0x%X", status);
 
-                            gatt.discoverServices();
+                        recordStatus(StatusChangeRecord.CONNECTED);
 
-                            getNotifyFunction().onConnected(context, gatt.getDevice().getAddress());
-                        } else {
-                            // status == GATT_ERROR
-                            // 异常断开，需要close后重连
-                            recordStatus(StatusChangeRecord.CONNECTED_ERROR);
-                            throw new IllegalStateException();
-                        }
+                        gatt.discoverServices();
+
+                        getNotifyFunction().onConnected(context, gatt.getDevice().getAddress());
                         break;
                     case BluetoothProfile.STATE_DISCONNECTED:
 
@@ -390,38 +422,25 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                         // 如果用户主动disconnect，需要手动removeFromMaintain，否则也会重新连接。
                         recordStatus(StatusChangeRecord.DISCONNECTED);
 
-                        getNotifyFunction().onDisconnected(context, gatt.getDevice().getAddress());
+                        getNotifyFunction().onDisconnected(context, address);
 
-                        if (bluetoothAdapter.isEnabled() && manager().isMaintain(device)) {
-                            LogUtils.d("Device " + address + " is in maintain list");
-                            if (status == BluetoothGatt.GATT_SUCCESS) {
-                                LogUtils.i(address + " gatt.connectImpl()");
-                                if (gatt.connect()) {
-                                    LogUtils.d("When get STATE_DISCONNECTED, gatt.connectImpl() return TRUE! address:%s", address);
-                                    isConnecting = true;
-                                    recordStatus(StatusChangeRecord.AUTOCONNECT);
-                                    getNotifyFunction().onConnecting(context, gatt.getDevice().getAddress());
-                                } else {
-                                    LogUtils.w("When get STATE_DISCONNECTED, gatt.connectImpl() return FALSE! address:%s", address);
-                                    recordStatus(StatusChangeRecord.AUTOCONNECT_FAIL);
-                                    throw new IllegalStateException();
-                                }
-                            } else {
-                                // status == GATT_FAILURE, 属于connectGatt时,registerClient失败，需要close后重连
-                                // status == 133, 属于异常断开，需要close后重连
-                                throw new IllegalStateException();
-                            }
-                        } else {
-                            LogUtils.d("bluetooth adapter is DISABLE or NOT in maintain list.");
-                            throw new IllegalStateException();
-                        }
-                        break;
+                        // status == GATT_FAILURE, 属于connectGatt时,registerClient失败，需要close后重连
+                        // status == 133, 属于异常断开，需要close后重连
+                        Preconditions.checkState((status == BluetoothGatt.GATT_SUCCESS), "Abnormal disconnect!");
+
+                        close();
+
+                        // 正常断开后，通知manager
+                        manager().onDisconnected(device, null);
                     default:
                         // NO OP
                 }
             } catch (Exception e) {
-
-                manager().onConnectException(NBleDeviceImpl.this, status);
+                recordStatus(StatusChangeRecord.CONNECTED_ERROR);
+                getNotifyFunction().onDisconnected(context, address);
+                close();
+                // 异常断开后，通知manager
+                manager().onDisconnected(device, e);
             }
         }
 
@@ -436,23 +455,29 @@ class NBleDeviceImpl extends DeviceBase implements NBleDevice {
                 }
             }
 
-            manager().onServicesDiscovered(gatt.getDevice().getAddress());
+            getNotifyFunction().onServicesDiscovered(context, gatt.getDevice().getAddress());
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            if (gatt == null || characteristic == null || gatt.getDevice() == null) {
-                return;
+            try {
+                Preconditions.checkState(status == BluetoothGatt.GATT_SUCCESS);
+                mEmitter.onNext(characteristic.getValue());
+                mEmitter.onComplete();
+            } catch (Exception e) {
+                mEmitter.onError(new Throwable(e.getMessage()));
             }
-            LogUtils.i("read: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " Status: " + status);
-
-            manager().onReadCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            LogUtils.d("Write confirm: " + gatt.getDevice().getAddress() + "))" + characteristic.getStringValue(0) + " status: " + status);
-            manager().onWriteCharacteristic(gatt.getDevice().getAddress(), characteristic.getUuid(), status == BluetoothGatt.GATT_SUCCESS ? characteristic.getValue() : null);
+            try {
+                Preconditions.checkState(status == BluetoothGatt.GATT_SUCCESS);
+                mEmitter.onNext(characteristic.getValue());
+                mEmitter.onComplete();
+            } catch (Exception e) {
+                mEmitter.onError(new Throwable(e.getMessage()));
+            }
         }
 
         @Override

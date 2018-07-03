@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -26,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.gangle.nble.DeviceStateEvent;
 import com.gangle.nble.NBle;
@@ -38,6 +40,7 @@ import com.gangle.nble.ScanFilter.NameScanFilter;
 import com.gangle.nble.ScanFilter.RssiScanFilter;
 import com.gangle.util.CommonUtil;
 import com.gangle.util.DeviceUtil;
+import com.google.common.base.Preconditions;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -54,6 +57,8 @@ import java.util.UUID;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnNeverAskAgain;
+import permissions.dispatcher.OnPermissionDenied;
 import permissions.dispatcher.OnShowRationale;
 import permissions.dispatcher.PermissionRequest;
 import permissions.dispatcher.RuntimePermissions;
@@ -111,6 +116,7 @@ public class ScanActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan);
         ButterKnife.bind(this);
+        EventBus.getDefault().register(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -175,18 +181,22 @@ public class ScanActivity extends AppCompatActivity
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDeviceStateEvent(DeviceStateEvent event) {
-        if (event instanceof DeviceStateEvent) {
-            Timber.d("get a event, %s", event.toString());
-            NBleDevice device = getDeviceInfo(event.address);
-            if (device != null) {
-                int index = devList.indexOf(device);
-                recyclerView.getAdapter().notifyItemChanged(index);
-            }
+    public void onDeviceStateEvent(final DeviceStateEvent event) {
+        if (!ScanActivity.this.isFinishing()) {
+            if (event instanceof DeviceStateEvent) {
+                Timber.d("get a event, %s", event.toString());
 
-            // enable notifications
-            if (event.type == DeviceStateEvent.DISCOVERED) {
-                device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
+
+                NBleDevice device = getDeviceInfo(event.address);
+                if (device != null) {
+                    int index = devList.indexOf(device);
+                    recyclerView.getAdapter().notifyItemChanged(index);
+                }
+
+                // enable notifications
+                if (event.type == DeviceStateEvent.DISCOVERED) {
+                    device.subscribe(SERVICES_FIND_UUID, CHARACTERISTICS_CONTROL_UUID, true);
+                }
             }
         }
     }
@@ -217,7 +227,7 @@ public class ScanActivity extends AppCompatActivity
                     .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
+                            // NO OP
                         }
                     }).create().show();
             return false;
@@ -235,6 +245,7 @@ public class ScanActivity extends AppCompatActivity
                     .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            // NO OP
                         }
                     }).create().show();
 
@@ -243,16 +254,22 @@ public class ScanActivity extends AppCompatActivity
         return true;
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // NOTE: delegate the permission handling to generated method
+        ScanActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+    }
+
     @NeedsPermission({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
     public void onScanStart() {
-        if (checkConditions()) {
-            if (!scanner.isScanning())
-                scanner.start(scanListener, scanDuration);
-            else {
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        } else {
+        try {
+            Preconditions.checkState(checkConditions(), "Conditions is not matched");
+            Preconditions.checkState(!scanner.isScanning(), "is scanning");
+            Preconditions.checkState(scanner.start(scanListener, scanDuration), "scan fail");
+        } catch (Exception e) {
             swipeRefreshLayout.setRefreshing(false);
+            Timber.w(e.getMessage());
         }
     }
 
@@ -271,7 +288,24 @@ public class ScanActivity extends AppCompatActivity
                 request.cancel();
             }
         }).show();
+    }
 
+    @OnPermissionDenied({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
+    void showDeniedForBluetooth() {
+        Toast.makeText(this, "Denied", Toast.LENGTH_SHORT).show();
+        swipeRefreshLayout.setRefreshing(false);
+        if (scanner != null && scanner.isScanning()) {
+            scanner.stop();
+        }
+    }
+
+    @OnNeverAskAgain({Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION})
+    void showNeverAskForBluetooth() {
+        Toast.makeText(this, "Never ask", Toast.LENGTH_SHORT).show();
+        swipeRefreshLayout.setRefreshing(false);
+        if (scanner != null && scanner.isScanning()) {
+            scanner.stop();
+        }
     }
 
 
@@ -547,6 +581,10 @@ public class ScanActivity extends AppCompatActivity
     @Subscribe
     public void onScanDurationChange(ScanDurationChangeEvent event) {
         updateDuration();
+        swipeRefreshLayout.setRefreshing(false);
+        if (scanner != null && scanner.isScanning()) {
+            scanner.stop();
+        }
     }
 
     @Subscribe
@@ -638,15 +676,8 @@ public class ScanActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    protected void onStop() {
+    public void onDestroy() {
+        super.onDestroy();
         EventBus.getDefault().unregister(this);
-        super.onStop();
     }
-
 }

@@ -16,11 +16,11 @@ public final class NBle {
     private NBle() {
     }
 
-    static public void init(Context context) {
+    public static void init(Context context) {
         init(context);
     }
 
-    static public void init(Context context, NBlePreference.DeviceSerialization serialization) {
+    public static void init(Context context, NBlePreference.DeviceSerialization serialization) {
         // BLE Share Preference
         NBlePreference.init(context, serialization);
 
@@ -29,9 +29,6 @@ public final class NBle {
 
         // BLE Service
         NBleService.start(context);
-
-        // Operation Manager
-        OperationManager.getInstance().init(NBleDeviceManagerImpl.getInstance());
 
         // Scanner
         scanner = new NBleScannerImpl(context);
